@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hello World!</title>
+    <link rel="stylesheet" href="index.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <!-- Insert this line above script imports  -->
+    <script>if (typeof module === 'object') { window.module = module; module = undefined; }
+    </script>
+    <script>if (window.module) module = window.module;</script>
+    <script defer src="render.js"></script>
+  </head>
+  <body>
+    <nav id="header">
+      <h1>mapKit</h1>  
+    </nav>
+    <div class="layers-list"></div>
+    <div id="map"></div>
+    <ul>
+      <li>
+        Converters: Coordinates(WKT, etc)
+      </li>  
+      <li>
+        Generators: Draw Points/Lines/Polys => Export As (.shp|.geojson|WKT)
+      </li>  
+    </ul>
+  </body>
+</html>

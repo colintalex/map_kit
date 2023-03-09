@@ -1,11 +1,23 @@
 const jQuery = require('jquery');
 const L = require('leaflet');
 const { ipcRenderer } = require("electron");
+const Path = require("path");
+const fs = require("fs");
 
+g_temp_dir = './tmp'
 
 jQuery(".layers-list").on("click", ".shp_download", function (e) {
   let data = {
     json_path: e.target.value,
+    type: 'shp'
+  };
+
+  ipcRenderer.send("save_outbound", data);
+});
+jQuery(".layers-list").on("click", ".geojson_download", function (e) {
+  let data = {
+    path: e.target.value,
+    type: 'geojson'
   };
   ipcRenderer.send("save_outbound", data);
 });
@@ -19,6 +31,52 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
 
 const layerList = document.querySelector(".layers-list");
 
+function readAndUploadJson(path){
+    fs.readFile(path, "utf8", (err, data) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      let json = JSON.parse(data)
+      let layer = L.geoJSON(json).addTo(map);
+      map.fitBounds(layer.getBounds());
+    });
+}
+
+function updateLayersList(f){
+  const div = document.createElement("div");
+  div.classList.add("layer");
+  div.innerHTML = `
+          <div alt="${f.name}">
+          <p>${f.name}</p>
+          <button class='shp_download' id='${f.name}' type='geojson' value='${f.path}'>SHP</button>
+          </div>
+      `;
+  layerList.appendChild(div);
+}
+
+function readAndUploadShp(path){
+  let data = {
+    path: path,
+    type: "shp",
+  };
+
+  // send to temp for conversion
+  ipcRenderer.send("save_inbound", data);
+
+
+}
+
+function readTextFile(file, callback) {
+
+}
+
+ipcRenderer.on("shp-to-geojson-reply", (event, arg) => {
+  readAndUploadJson(arg.path);
+});
+
+
+
 document.addEventListener("drop", (event) => {
   event.preventDefault();
   event.stopPropagation();
@@ -28,47 +86,20 @@ document.addEventListener("drop", (event) => {
     let file_extension = /\w+$/.exec(f.path)[0];
     // check_file extensions
     // [geojson, shp, kml] first. then=> gml(?), lidar(?)
-    switch(file_extension){
-      case 'geojson'||'json':
-        readAndUploadJson(f);
+    switch (file_extension) {
+      case "geojson":
+        readAndUploadJson(f.path);
         break;
-      case 'kml':
+      case "kml":
         break;
-      case 'shp':
+      case "shp":
+        readAndUploadShp(f.path);
         break;
     }
+    updateLayersList(f);
   }
 });
 
-function readAndUploadJson(f){
-  // read_file
-  readTextFile(f.path, function (text) {
-    var data = JSON.parse(text);
-    let layer = L.geoJSON(data).addTo(map);
-    map.fitBounds(layer.getBounds());
-  });
-  const div = document.createElement("div");
-  div.classList.add("layer");
-  div.innerHTML = `
-          <div alt="${f.name}">
-          <p>${f.name}</p>
-          <button class='shp_download' id='${f.name}' value='${f.path}'>SHP</button>
-          </div>
-      `;
-  layerList.appendChild(div);
-}
-
-function readTextFile(file, callback) {
-  var rawFile = new XMLHttpRequest();
-  rawFile.overrideMimeType("application/json");
-  rawFile.open("GET", file, true);
-  rawFile.onreadystatechange = function () {
-    if (rawFile.readyState === 4 && rawFile.status == "200") {
-      callback(rawFile.responseText);
-    }
-  };
-  rawFile.send(null);
-}
 
 document.addEventListener("dragover", (e) => {
   e.preventDefault();

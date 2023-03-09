@@ -6,6 +6,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "electron-forge start",
+    "debug": "electron-forge start --inspect-electron",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
@@ -18,9 +19,12 @@
   },
   "license": "MIT",
   "dependencies": {
+    "decompress": "^4.2.1",
     "electron-squirrel-startup": "^1.0.0",
+    "geojson2shp": "^0.5.0",
     "jquery": "^3.6.3",
-    "leaflet": "^1.7.1"
+    "leaflet": "^1.7.1",
+    "shapefile-to-geojson": "^1.0.1"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.0.5",

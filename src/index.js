@@ -3,6 +3,9 @@ const path = require("path");
 const { ipcMain } = require("electron");
 const { dialog } = require("electron");
 const { convert } = require("geojson2shp");
+const fs = require('fs');
+const shapefileToGeojson = require("shapefile-to-geojson");
+const decompress = require("decompress");
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -21,61 +24,131 @@ const createWindow = () => {
     },
   });
 
-  // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, "index.html"));
 
-  // Open the DevTools.
   mainWindow.webContents.openDevTools();
 };
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.on("ready", createWindow);
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
+    // TODO: clear temp dir
     app.quit();
   }
 });
 
 app.on("activate", () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
+// =======================================================
+// =======================================================
+// =======================================================
 
-// Attach listener in the main process with the given ID
+ipcMain.on("save_inbound", (event, arg) => {
+  let src_path = arg.path;
+  let type = arg.type;
+  switch (type) {
+    case "shp":
+      convertShapeToGeoJson(src_path)
+        .then(function (data) {
+          event.sender.send("shp-to-geojson-reply", data);
+          console.log('Converted shape to temporary GeoJSON')
+        })
+        .catch(function (error) {
+          console.log('error',error)
+        });
+      break;
+    case "geojson":
+      break;
+  }
+})
+
 ipcMain.on("save_outbound", (event, arg) => {
-  
   let json_path = arg.json_path;
-  // dialog.showSaveDialog({
-    //   options: {
-      //     defaultPath: 'test.zip'
-      //   }
-      //   properties: ["createDirectory"],
-      // })
-  test(json_path)
+  let type = arg.type;
+
+  dialog.showSaveDialog({
+    properties: ["createDirectory"],
+    options: {
+      defaultPath: 'test.zip'
+    },
+  })
   .then(function (data) {
-    console.log('Success')
-    console.log(data)
+    convertGeoJsonToShp(json_path, data.filePath)
+  })
+  .then(function (data) {
+    debugger
+    // removeTempFile(json_path);
   })
   .catch(function(data){
+    debugger
     console.log(data)
   });
 });
 
-async function test(json_path){
+ipcMain.handle("some-name", async (event, path) => {
+  return result;
+});
+
+// ==========================================
+// ==========================================
+// ==========================================
+
+function removeTempFile(temp_path) {
+  temp_json = temp_path.replace(/(\.[\w\d_-]+)$/i, "_temp$1");
+
+  if (fs.existsSync(path)) {
+    fs.unlink(temp_json, (err) => {
+      if (err) {
+        console.error("errrrr");
+        console.error(err);
+        return;
+      }
+      //file removed
+      console.log("Temp file removed");
+    });
+  } else {
+    console.log("file not found!");
+  }
+}
+
+// ==========================================
+// ==========================================
+
+async function convertShapeToGeoJson(src_path) {
+  let src_dbf_path = src_path.replace('.shp','.dbf')
+  const geojson = await shapefileToGeojson.parseFiles(src_path, src_dbf_path)
+
+  let data = JSON.stringify(geojson, null, 2);
+  let basename = path.basename(src_path).replace('shp', 'geojson');
+  let filename = path.resolve(`./tmp/${basename}`)
+
+  fs.writeFile(filename, data, function (err) {
+    if (err) {
+      console.log(err);
+    }
+    console.log("The file was saved!");
+  });
+  console.log(filename)
+  
+  return { geojson: geojson, path: filename }
+}
+
+async function convertGeoJsonToShp(json_path, shape_path){
   const options = {
     layer: "my-layer",
   };
-  await convert(json_path, "./tmp/test.zip", options);
+  temp_json = json_path.replace(/(\.[\w\d_-]+)$/i, "_temp$1");
+  fs.copyFile(json_path, temp_json, (err) => {
+    if (err) throw err;
+    console.log('Temp file created for safety.');
+  });
+
+  debugger
+  let data = await convert(temp_json, shape_path, options);
+
 }

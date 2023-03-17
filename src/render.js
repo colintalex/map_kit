@@ -16,31 +16,47 @@ jQuery(".layers-list").on("click", ".shp_download", function (e) {
 });
 jQuery(".layers-list").on("click", ".geojson_download", function (e) {
   let data = {
-    path: e.target.value,
+    json_path: e.target.value,
     type: 'geojson'
   };
   ipcRenderer.send("save_outbound", data);
 });
 
-var map = L.map("map").setView([51.505, -0.09], 13);
+var map = L.map("map").setView([38.505, -98.09], 4);
+const layerControl = L.control.layers().addTo(map);
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
   attribution:
     '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
 }).addTo(map);
 
+
+
 const layerList = document.querySelector(".layers-list");
 
 function readAndUploadJson(path){
-    fs.readFile(path, "utf8", (err, data) => {
-      if (err) {
-        console.error(err);
-        return;
-      }
-      let json = JSON.parse(data)
-      let layer = L.geoJSON(json).addTo(map);
-      map.fitBounds(layer.getBounds());
-    });
+    let data = {
+      path: path,
+      type: "geojson",
+    };
+  
+    // send to temp for conversion
+    ipcRenderer.send("save_inbound", data);
+}
+
+function addJSONToMap(path){
+  fs.readFile(path, "utf8", (err, data) => {
+    if (err) {
+      console.error(err);
+      return;
+    }
+    let layername = path.replace(/^.*[\\\/]/, '')
+
+    let json = JSON.parse(data);
+    let layer = L.geoJSON(json).addTo(map);
+    layerControl.addOverlay(layer, layername);
+    map.fitBounds(layer.getBounds());
+  });
 }
 
 function updateLayersList(f){
@@ -49,7 +65,8 @@ function updateLayersList(f){
   div.innerHTML = `
           <div alt="${f.name}">
           <p>${f.name}</p>
-          <button class='shp_download' id='${f.name}' type='geojson' value='${f.path}'>SHP</button>
+          <button class='shp_download' id='${f.name}' type='shp' value='${f.path}'>SHP</button>
+          <button class='geojson_download' id='${f.name}' type='geojson' value='${f.path}'>GeoJSON</button>
           </div>
       `;
   layerList.appendChild(div);
@@ -63,16 +80,20 @@ function readAndUploadShp(path){
 
   // send to temp for conversion
   ipcRenderer.send("save_inbound", data);
-
-
 }
 
-function readTextFile(file, callback) {
+function readAndUploadTxt(path) {
+  let data = {
+    path: path,
+    type: "txt",
+  };
 
+  // send to temp for conversion
+  ipcRenderer.send("save_inbound", data);
 }
 
 ipcRenderer.on("shp-to-geojson-reply", (event, arg) => {
-  readAndUploadJson(arg.path);
+  addJSONToMap(arg.path);
 });
 
 
@@ -95,11 +116,13 @@ document.addEventListener("drop", (event) => {
       case "shp":
         readAndUploadShp(f.path);
         break;
+      case "txt":
+        readAndUploadTxt(f.path);
+        break;
     }
     updateLayersList(f);
   }
 });
-
 
 document.addEventListener("dragover", (e) => {
   e.preventDefault();

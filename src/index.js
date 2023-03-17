@@ -6,7 +6,7 @@ const { convert } = require("geojson2shp");
 const fs = require('fs');
 const shapefileToGeojson = require("shapefile-to-geojson");
 const decompress = require("decompress");
-
+const fsPromises = require("fs").promises;
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
   app.quit();
@@ -51,6 +51,9 @@ app.on("activate", () => {
 ipcMain.on("save_inbound", (event, arg) => {
   let src_path = arg.path;
   let type = arg.type;
+  let basename = path.basename(src_path);
+  let tmp_path = path.resolve(`./tmp/${basename}`);
+
   switch (type) {
     case "shp":
       convertShapeToGeoJson(src_path)
@@ -63,6 +66,18 @@ ipcMain.on("save_inbound", (event, arg) => {
         });
       break;
     case "geojson":
+      fsPromises.copyFile(src_path, tmp_path)
+      .then(function(data){
+        console.log(data);
+        event.sender.send("shp-to-geojson-reply", { path: tmp_path });
+      });
+      break;
+    case "txt":
+      fsPromises.copyFile(src_path, tmp_path)
+      .then(function(data){
+        console.log(data);
+        event.sender.send("shp-to-geojson-reply", { path: tmp_path });
+      });
       break;
   }
 })
@@ -70,24 +85,44 @@ ipcMain.on("save_inbound", (event, arg) => {
 ipcMain.on("save_outbound", (event, arg) => {
   let json_path = arg.json_path;
   let type = arg.type;
-
-  dialog.showSaveDialog({
-    properties: ["createDirectory"],
-    options: {
-      defaultPath: 'test.zip'
-    },
-  })
-  .then(function (data) {
-    convertGeoJsonToShp(json_path, data.filePath)
-  })
-  .then(function (data) {
-    debugger
-    // removeTempFile(json_path);
-  })
-  .catch(function(data){
-    debugger
-    console.log(data)
-  });
+  switch(type){
+    case 'shp':
+      dialog.showSaveDialog({
+        properties: ["createDirectory"],
+        options: {
+          defaultPath: 'test.zip'
+        },
+      })
+      .then(function (data) {
+        convertGeoJsonToShp(json_path, data.filePath)
+      })
+      .catch(function(data){
+        console.log(data)
+      });
+      break;
+    case 'geojson':
+      dialog
+        .showSaveDialog({
+          properties: ["createDirectory"],
+          options: {
+            defaultPath: "~/Desktop/test.geojson",
+            filters: [
+              { name: "Images", extensions: ["jpg", "png", "gif"] },
+              { name: "Movies", extensions: ["mkv", "avi", "mp4"] },
+              { name: "Custom File Type", extensions: ["as"] },
+              { name: "All Files", extensions: ["*"] },
+            ],
+          },
+        })
+        .then(function (data) {
+          let new_path = data.filePath;
+          console.log(json_path);
+          fs.copyFile(json_path, new_path, (err) => {
+            console.log(err);
+          });
+        });
+      break;
+  }
 });
 
 ipcMain.handle("some-name", async (event, path) => {
@@ -148,7 +183,6 @@ async function convertGeoJsonToShp(json_path, shape_path){
     console.log('Temp file created for safety.');
   });
 
-  debugger
   let data = await convert(temp_json, shape_path, options);
-
+  return data;
 }

@@ -68,14 +68,12 @@ ipcMain.on("save_inbound", (event, arg) => {
     case "geojson":
       fsPromises.copyFile(src_path, tmp_path)
       .then(function(data){
-        console.log(data);
         event.sender.send("shp-to-geojson-reply", { path: tmp_path });
       });
       break;
     case "txt":
       fsPromises.copyFile(src_path, tmp_path)
       .then(function(data){
-        console.log(data);
         event.sender.send("shp-to-geojson-reply", { path: tmp_path });
       });
       break;

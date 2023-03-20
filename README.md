@@ -18,7 +18,8 @@ Current features:
 Planned features:
 - Display GeoJSON file for viewing/live editing
 - Modify/export GeoJSON/Shapfiles/SNAPPLAN/KML/txt files
-
+- Add GeoTiff
+- MBtiles?
 ---
 
 ![caption](./screenshot.png)

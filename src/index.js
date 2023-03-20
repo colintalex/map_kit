@@ -77,7 +77,8 @@ ipcMain.on("save_inbound", (event, arg) => {
   let type = arg.type;
   let basename = path.basename(src_path);
   let tmp_path = path.resolve(`./tmp/${basename}`);
-
+console.log(tmp_path);
+console.log(src_path);
   switch (type) {
     case "shp":
       convertShapeToGeoJson(src_path)
@@ -113,8 +114,9 @@ ipcMain.on("save_inbound", (event, arg) => {
         const kml = new DOMParser().parseFromString(
           fs.readFileSync(tmp_path, "utf8")
         );
-        const converted = tj.kml(kml);
-        let tempjson_path =path.basename(tmp_path).replace("kml", "geojson");
+        let converted = tj.kml(kml);
+        console.log(converted);
+        let tempjson_path = tmp_path.replace("kml", "geojson");
         fs.writeFile(tempjson_path, JSON.stringify(converted), (err) => {
           if (err) {
             console.error(err);
@@ -232,10 +234,10 @@ async function convertShapeToGeoJson(src_path) {
   let src_dbf_path = src_path.replace('.shp','.dbf')
   const geojson = await shapefileToGeojson.parseFiles(src_path, src_dbf_path)
 
-  let data = JSON.stringify(geojson, null, 2);
+  let data = JSON.stringify(geojson);
   let basename = path.basename(src_path).replace('shp', 'geojson');
   let filename = path.resolve(`./tmp/${basename}`)
-
+  console.log(geojson['features'][0]);
   fs.writeFile(filename, data, function (err) {
     if (err) {
       console.log(err);

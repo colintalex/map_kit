@@ -2800,7 +2800,7 @@
   "version" "2.0.0"
 
 "shapefile-to-geojson@github:colintalex/shapefile-to-geojson":
-  "resolved" "git+ssh://git@github.com/colintalex/shapefile-to-geojson.git#fd6f8f9019e343084c907fb1954cee72329b83bd"
+  "resolved" "git+ssh://git@github.com/colintalex/shapefile-to-geojson.git#1aca27db33515674a5e5c3c5c345cabcce46c90e"
   "version" "1.0.0"
 
 "shebang-command@^1.2.0":

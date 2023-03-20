@@ -117,7 +117,7 @@ console.log(src_path);
         let converted = tj.kml(kml);
         console.log(converted);
         let tempjson_path = tmp_path.replace("kml", "geojson");
-        fs.writeFile(tempjson_path, JSON.stringify(converted), (err) => {
+        fs.writeFile(tempjson_path, JSON.stringify(converted, null, 2), (err) => {
           if (err) {
             console.error(err);
           }
@@ -234,7 +234,7 @@ async function convertShapeToGeoJson(src_path) {
   let src_dbf_path = src_path.replace('.shp','.dbf')
   const geojson = await shapefileToGeojson.parseFiles(src_path, src_dbf_path)
 
-  let data = JSON.stringify(geojson);
+  let data = JSON.stringify(geojson, null, 2);
   let basename = path.basename(src_path).replace('shp', 'geojson');
   let filename = path.resolve(`./tmp/${basename}`)
   console.log(geojson['features'][0]);

@@ -4,6 +4,7 @@ const { ipcRenderer } = require("electron");
 const Path = require("path");
 const fs = require("fs");
 
+
 g_temp_dir = './tmp'
 
 jQuery(".layers-list").on("click", ".shp_download", function (e) {
@@ -18,6 +19,13 @@ jQuery(".layers-list").on("click", ".geojson_download", function (e) {
   let data = {
     json_path: e.target.value,
     type: 'geojson'
+  };
+  ipcRenderer.send("save_outbound", data);
+});
+jQuery(".layers-list").on("click", ".kml_download", function (e) {
+  let data = {
+    json_path: e.target.value,
+    type: 'kml'
   };
   ipcRenderer.send("save_outbound", data);
 });
@@ -38,6 +46,16 @@ function readAndUploadJson(path){
     let data = {
       path: path,
       type: "geojson",
+    };
+  
+    // send to temp for conversion
+    ipcRenderer.send("save_inbound", data);
+}
+
+function readAndUploadKML(path){
+    let data = {
+      path: path,
+      type: "kml",
     };
   
     // send to temp for conversion
@@ -67,6 +85,7 @@ function updateLayersList(f){
           <p>${f.name}</p>
           <button class='shp_download' id='${f.name}' type='shp' value='${f.path}'>SHP</button>
           <button class='geojson_download' id='${f.name}' type='geojson' value='${f.path}'>GeoJSON</button>
+          <button class='kml_download' id='${f.name}' type='kml' value='${f.path}'>KML</button>
           </div>
       `;
   layerList.appendChild(div);
@@ -93,6 +112,7 @@ function readAndUploadTxt(path) {
 }
 
 ipcRenderer.on("shp-to-geojson-reply", (event, arg) => {
+  updateLayersList(arg);
   addJSONToMap(arg.path);
 });
 
@@ -112,6 +132,7 @@ document.addEventListener("drop", (event) => {
         readAndUploadJson(f.path);
         break;
       case "kml":
+        readAndUploadKML(f.path);
         break;
       case "shp":
         readAndUploadShp(f.path);
@@ -120,7 +141,6 @@ document.addEventListener("drop", (event) => {
         readAndUploadTxt(f.path);
         break;
     }
-    updateLayersList(f);
   }
 });
 

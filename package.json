@@ -19,12 +19,16 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@tmcw/togeojson": "^5.6.0",
     "decompress": "^4.2.1",
     "electron-squirrel-startup": "^1.0.0",
+    "geojson-to-kml": "^0.0.1",
     "geojson2shp": "^0.5.0",
     "jquery": "^3.6.3",
+    "kml-to-json": "^1.1.1",
     "leaflet": "^1.7.1",
-    "shapefile-to-geojson": "^1.0.1"
+    "shapefile-to-geojson": "^1.0.1",
+    "xmldom": "^0.6.0"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.0.5",

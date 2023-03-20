@@ -7,6 +7,12 @@ const fs = require('fs');
 const shapefileToGeojson = require("shapefile-to-geojson");
 const decompress = require("decompress");
 const fsPromises = require("fs").promises;
+const tokml =  require('geojson-to-kml');
+const kmlToJson = require("kml-to-json");
+const tj = require("@tmcw/togeojson");
+
+const DOMParser = require("xmldom").DOMParser;
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
   app.quit();
@@ -23,6 +29,8 @@ const createWindow = () => {
       // preload: path.join(__dirname, 'preload.js'),
     },
   });
+  mainWindow.on("closed", () => clearTempDir());
+
 
   mainWindow.loadFile(path.join(__dirname, "index.html"));
 
@@ -34,6 +42,7 @@ app.on("ready", createWindow);
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     // TODO: clear temp dir
+    clearTempDir();
     app.quit();
   }
 });
@@ -44,9 +53,24 @@ app.on("activate", () => {
   }
 });
 
+
 // =======================================================
 // =======================================================
 // =======================================================
+
+function clearTempDir(){
+  let directory = './tmp';
+  console.count()
+  fs.readdir(directory, (err, files) => {
+    if (err) throw err;
+
+    for (const file of files) {
+      fs.unlink(path.join(directory, file), (err) => {
+        if (err) throw err;
+      });
+    }
+  });
+}
 
 ipcMain.on("save_inbound", (event, arg) => {
   let src_path = arg.path;
@@ -68,13 +92,37 @@ ipcMain.on("save_inbound", (event, arg) => {
     case "geojson":
       fsPromises.copyFile(src_path, tmp_path)
       .then(function(data){
-        event.sender.send("shp-to-geojson-reply", { path: tmp_path });
+        event.sender.send("shp-to-geojson-reply", {
+          path: tmp_path,
+          name: path.basename(src_path),
+        });
       });
       break;
     case "txt":
       fsPromises.copyFile(src_path, tmp_path)
       .then(function(data){
-        event.sender.send("shp-to-geojson-reply", { path: tmp_path });
+        event.sender.send("shp-to-geojson-reply", {
+          path: tmp_path,
+          name: path.basename(src_path),
+        });
+      });
+      break;
+    case 'kml':
+      fsPromises.copyFile(src_path, tmp_path)
+      .then(function (data) {
+        const kml = new DOMParser().parseFromString(
+          fs.readFileSync(tmp_path, "utf8")
+        );
+        const converted = tj.kml(kml);
+        let tempjson_path =path.basename(tmp_path).replace("kml", "geojson");
+        fs.writeFile(tempjson_path, JSON.stringify(converted), (err) => {
+          if (err) {
+            console.error(err);
+          }
+          // file written successfully
+          let payload = {  path: tempjson_path, name: path.basename(src_path) };
+          event.sender.send("shp-to-geojson-reply", payload);
+        });
       });
       break;
   }
@@ -119,6 +167,34 @@ ipcMain.on("save_outbound", (event, arg) => {
             console.log(err);
           });
         });
+        break;
+      case 'kml':
+        dialog
+          .showSaveDialog({
+            properties: ["createDirectory"],
+            options: {
+              defaultPath: "~/Desktop/test.geojson",
+            },
+          })
+          .then(function (data) {
+            let new_path = data.filePath;
+            const raw = fs.readFileSync(json_path, {
+              encoding: "utf8",
+              flag: "r",
+            });
+            console.log(raw);
+            // let raw = fs.readFile(json_path, "utf-8");
+            let json = JSON.parse(raw);
+            console.log(json);
+            const kml_stuff = tokml(json);
+            fs.writeFile(new_path, kml_stuff, (err) => {
+              if (err) {
+                console.error(err);
+              }
+            console.log('Done');
+              // file written successfully
+            });
+          });
       break;
   }
 });
@@ -168,14 +244,16 @@ async function convertShapeToGeoJson(src_path) {
   });
   console.log(filename)
   
-  return { geojson: geojson, path: filename }
+  return { geojson: geojson, path: filename, name: path.basename(src_path) }
 }
 
 async function convertGeoJsonToShp(json_path, shape_path){
   const options = {
     layer: "my-layer",
   };
+
   temp_json = json_path.replace(/(\.[\w\d_-]+)$/i, "_temp$1");
+
   fs.copyFile(json_path, temp_json, (err) => {
     if (err) throw err;
     console.log('Temp file created for safety.');

@@ -71,7 +71,11 @@ function addJSONToMap(path){
     let layername = path.replace(/^.*[\\\/]/, '')
 
     let json = JSON.parse(data);
-    let layer = L.geoJSON(json).addTo(map);
+    let layer = L.geoJSON(json, {
+      onEachFeature: function (feature, layer) {
+        debugger;
+      }
+    }).addTo(map);
     layerControl.addOverlay(layer, layername);
     map.fitBounds(layer.getBounds());
   });

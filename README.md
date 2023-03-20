@@ -1,10 +1,24 @@
 # MapKit
 
+## Drag&Drop Spatial Vector Viewing/Conversion
+---
+
 Currently in development. 
 
-Designed to a GUI for common GIS operations. 
+Designed to be a quick and easy GUI for common GIS operations.
+
+Current features:
+- Drag&Drop any accepted files to map
+- Export layer as accepted file type
+- Accepted file types:
+  - .shp
+  - .kml
+  - .geojson
+
 Planned features:
-- Drag and drog vector files and auto-load on map
-- Export uploaded vector file in a variety of other vector formats.
+- Display GeoJSON file for viewing/live editing
 - Modify/export GeoJSON/Shapfiles/SNAPPLAN/KML/txt files
 
+---
+
+![caption](./screenshot.png)

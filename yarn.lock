@@ -1094,6 +1094,11 @@
   "resolved" "https://registry.npmjs.org/epsg-index/-/epsg-index-1.2.0.tgz"
   "version" "1.2.0"
 
+"epsg@^0.5.0":
+  "integrity" "sha512-pDYSAgHpE0PQ7tYwdriGSXZdoty21AHTMjK8VKolNlg+JKroWX0nquMbWDZH4g3NOQXz9TyIBtaID9YjOqDGtw=="
+  "resolved" "https://registry.npmjs.org/epsg/-/epsg-0.5.0.tgz"
+  "version" "0.5.0"
+
 "err-code@^2.0.2":
   "integrity" "sha512-2bmlRpNKBxT/CRmPOlyISQpNj+qSeYvcym/uT0Jx2bMOlKLtSy1ZmLuVxSEKKyor/N5yhvp/ZiG1oE3DEYMSFA=="
   "resolved" "https://registry.npmjs.org/err-code/-/err-code-2.0.3.tgz"
@@ -2507,6 +2512,11 @@
     "base64-js" "^1.5.1"
     "xmlbuilder" "^15.1.1"
 
+"prj2epsg@^1.0.0":
+  "integrity" "sha512-L6P77WvGSoTf+Kd6DMdum123Ypza+BLf6MOZ/o1O1OGbwfF3taEDu3AgLccH7165G6FQKaA/MWiDT5Gr7WlpHA=="
+  "resolved" "https://registry.npmjs.org/prj2epsg/-/prj2epsg-1.0.0.tgz"
+  "version" "1.0.0"
+
 "process-nextick-args@~2.0.0":
   "integrity" "sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag=="
   "resolved" "https://registry.npmjs.org/process-nextick-args/-/process-nextick-args-2.0.1.tgz"
@@ -2618,7 +2628,7 @@
   dependencies:
     "resolve" "^1.20.0"
 
-"reproject@^1.2.6":
+"reproject@^1.2.6", "reproject@^1.2.7":
   "integrity" "sha512-x3wGpoHBsXDa1iyZZA3Nn52iTgzfLLPBLvsj1j4v3Kwcy3if5IRgi/s/Ayy/qAIm6BsjCwnuojShpfYG+FBAjA=="
   "resolved" "https://registry.npmjs.org/reproject/-/reproject-1.2.7.tgz"
   "version" "1.2.7"
@@ -2800,8 +2810,11 @@
   "version" "2.0.0"
 
 "shapefile-to-geojson@github:colintalex/shapefile-to-geojson":
-  "resolved" "git+ssh://git@github.com/colintalex/shapefile-to-geojson.git#1aca27db33515674a5e5c3c5c345cabcce46c90e"
+  "resolved" "git+ssh://git@github.com/colintalex/shapefile-to-geojson.git#db20d99dbfaacd2fda5af590cd6679a4a74a6065"
   "version" "1.0.0"
+  dependencies:
+    "epsg" "^0.5.0"
+    "prj2epsg" "^1.0.0"
 
 "shebang-command@^1.2.0":
   "integrity" "sha512-EV3L1+UQWGor21OmnvojK36mhg+TyIKDh3iFBKBohr5xeXIhNBcx8oWdgkTEEQ+BEFFYdLRuqMfd5L84N1V5Vg=="

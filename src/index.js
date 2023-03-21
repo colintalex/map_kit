@@ -6,6 +6,9 @@ const { convert } = require("geojson2shp");
 const fs = require('fs');
 const shapefileToGeojson = require("shapefile-to-geojson");
 const decompress = require("decompress");
+const reproject = require("reproject");
+const epsg = require("epsg");
+const prj2epsg = require("prj2epsg");
 const fsPromises = require("fs").promises;
 const tokml =  require('geojson-to-kml');
 const kmlToJson = require("kml-to-json");
@@ -34,7 +37,7 @@ const createWindow = () => {
 
   mainWindow.loadFile(path.join(__dirname, "index.html"));
 
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 };
 
 app.on("ready", createWindow);
@@ -77,8 +80,6 @@ ipcMain.on("save_inbound", (event, arg) => {
   let type = arg.type;
   let basename = path.basename(src_path);
   let tmp_path = path.resolve(`./tmp/${basename}`);
-console.log(tmp_path);
-console.log(src_path);
   switch (type) {
     case "shp":
       convertShapeToGeoJson(src_path)
@@ -133,12 +134,13 @@ console.log(src_path);
 ipcMain.on("save_outbound", (event, arg) => {
   let json_path = arg.json_path;
   let type = arg.type;
+  let crs = arg.crs;
   switch(type){
     case 'shp':
       dialog.showSaveDialog({
         properties: ["createDirectory"],
         options: {
-          defaultPath: 'test.zip'
+          defaultPath: path.resolve('~/Downloads/test.zip')
         },
       })
       .then(function (data) {
@@ -149,17 +151,29 @@ ipcMain.on("save_outbound", (event, arg) => {
       });
       break;
     case 'geojson':
+      let path = path.resolve("~/Desktop/test.geojson")
+      if (crs != 'EPSG:4326'){
+        // used converted or convert
+        // TODO:
+        const reprojected_crs = crs;
+        const reprojected_json = reproject.toWgs84(
+          geojson,
+          geojson.crs.properties.name,
+          epsg
+        );
+        reprojected_json.crs.properties.name = reprojected_crs;
+
+        let reproj_data = JSON.stringify(reprojected_json, null, 2);
+        let reproj_basename = path
+          .basename(src_path)
+          .replace(".shp", `_4326.geojson`);
+        let reproj_filename = path.resolve(`./tmp/${reproj_basename}`);
+      }
       dialog
         .showSaveDialog({
           properties: ["createDirectory"],
           options: {
-            defaultPath: "~/Desktop/test.geojson",
-            filters: [
-              { name: "Images", extensions: ["jpg", "png", "gif"] },
-              { name: "Movies", extensions: ["mkv", "avi", "mp4"] },
-              { name: "Custom File Type", extensions: ["as"] },
-              { name: "All Files", extensions: ["*"] },
-            ],
+            defaultPath: path,
           },
         })
         .then(function (data) {
@@ -175,7 +189,7 @@ ipcMain.on("save_outbound", (event, arg) => {
           .showSaveDialog({
             properties: ["createDirectory"],
             options: {
-              defaultPath: "~/Desktop/test.geojson",
+              defaultPath: path.resolve("~/Desktop/test.geojson"),
             },
           })
           .then(function (data) {
@@ -231,22 +245,63 @@ function removeTempFile(temp_path) {
 // ==========================================
 
 async function convertShapeToGeoJson(src_path) {
-  let src_dbf_path = src_path.replace('.shp','.dbf')
-  const geojson = await shapefileToGeojson.parseFiles(src_path, src_dbf_path)
+  let src_dbf_path = src_path.replace('.shp','.dbf');
+  let src_prj_path = src_path.replace('.shp','.prj');
+  const geojson = await shapefileToGeojson.parseFiles(src_path, src_dbf_path, src_prj_path);
+
 
   let data = JSON.stringify(geojson, null, 2);
-  let basename = path.basename(src_path).replace('shp', 'geojson');
-  let filename = path.resolve(`./tmp/${basename}`)
-  console.log(geojson['features'][0]);
+  let basename = path.basename(src_path).replace('.shp', `.geojson`);
+  let filename = path.resolve(`./tmp/${basename}`);
+  let original_crs = geojson.crs.properties.name;
   fs.writeFile(filename, data, function (err) {
     if (err) {
       console.log(err);
     }
     console.log("The file was saved!");
   });
-  console.log(filename)
+
+  if (original_crs.includes("4326")){
+    return {
+      geojson: {
+        data: data,
+        crs: {init: original_crs}
+      },
+      path: filename,
+      name: path.basename(src_path)
+    };
+  }
+
+  // save a copy original file
+  // create a copy of wgs84 transformed file
+  const reprojected_crs = "urn:ogc:def:crs:EPSG::4326";
+  const reprojected_json = reproject.toWgs84(
+    geojson,
+    geojson.crs.properties.name,
+    epsg
+  );
+  reprojected_json.crs.properties.name = reprojected_crs;
   
-  return { geojson: geojson, path: filename, name: path.basename(src_path) }
+  let reproj_data = JSON.stringify(reprojected_json, null, 2);
+  let reproj_basename = path.basename(src_path).replace('.shp', `_4326.geojson`);
+  let reproj_filename = path.resolve(`./tmp/${reproj_basename}`);
+
+  fs.writeFile(reproj_filename, reproj_data, function (err) {
+    if (err) {
+      console.log(err);
+    }
+    console.log("The file was saved!");
+  });
+  
+  let out = {
+    geojson: {
+      data: reproj_data,
+      crs: { init: original_crs, proj: reprojected_crs}
+    },
+    path: filename,
+    name: path.basename(src_path)
+  }
+  return out
 }
 
 async function convertGeoJsonToShp(json_path, shape_path){

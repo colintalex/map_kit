@@ -135,6 +135,8 @@ ipcMain.on("save_outbound", (event, arg) => {
   let json_path = arg.json_path;
   let type = arg.type;
   let crs = arg.crs;
+
+
   switch(type){
     case 'shp':
       dialog.showSaveDialog({
@@ -151,34 +153,19 @@ ipcMain.on("save_outbound", (event, arg) => {
       });
       break;
     case 'geojson':
-      let path = path.resolve("~/Desktop/test.geojson")
-      if (crs != 'EPSG:4326'){
-        // used converted or convert
-        // TODO:
-        const reprojected_crs = crs;
-        const reprojected_json = reproject.toWgs84(
-          geojson,
-          geojson.crs.properties.name,
-          epsg
-        );
-        reprojected_json.crs.properties.name = reprojected_crs;
-
-        let reproj_data = JSON.stringify(reprojected_json, null, 2);
-        let reproj_basename = path
-          .basename(src_path)
-          .replace(".shp", `_4326.geojson`);
-        let reproj_filename = path.resolve(`./tmp/${reproj_basename}`);
-      }
+      let out_path = path.resolve("~/Desktop/test.geojson")
+      if (crs != "EPSG:4326") json_path = generateConvertedGeoJson(json_path, crs);
       dialog
         .showSaveDialog({
           properties: ["createDirectory"],
           options: {
-            defaultPath: path,
+            defaultPath: out_path,
           },
         })
         .then(function (data) {
+          if (data.canceled) return false;
+
           let new_path = data.filePath;
-          console.log(json_path);
           fs.copyFile(json_path, new_path, (err) => {
             console.log(err);
           });
@@ -198,8 +185,6 @@ ipcMain.on("save_outbound", (event, arg) => {
               encoding: "utf8",
               flag: "r",
             });
-            console.log(raw);
-            // let raw = fs.readFile(json_path, "utf-8");
             let json = JSON.parse(raw);
             console.log(json);
             const kml_stuff = tokml(json);
@@ -318,4 +303,30 @@ async function convertGeoJsonToShp(json_path, shape_path){
 
   let data = await convert(temp_json, shape_path, options);
   return data;
+}
+
+function generateConvertedGeoJson(json_path, crs){
+  let original_data = fs.readFileSync(json_path, "utf8");
+  let original_json = JSON.parse(original_data);
+  const reprojected_crs = crs;
+
+  console.log("------------------");
+  console.log(`Converting from ${original_json.crs.properties.name} to ${crs}`);
+  console.log("------------------");
+
+  const reprojected_json = reproject.reproject(
+    original_json,
+    original_json.crs.properties.name,
+    crs,
+    epsg
+  );
+  reprojected_json.crs.properties.name = reprojected_crs;
+  let reproj_data = JSON.stringify(reprojected_json, null, 2);
+  let reproj_basename = path
+    .basename(json_path)
+    .replace(".geojson", `_${crs.replace("EPSG:", "")}.geojson`);
+  let reproj_filename = path.resolve(`./tmp/${reproj_basename}`);
+  json_path = reproj_filename;
+  fs.writeFileSync(reproj_filename, reproj_data, 'utf8');
+  return reproj_filename;
 }

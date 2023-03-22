@@ -19,9 +19,11 @@ window.onclick = function (event) {
 };
 
 jQuery(".layers-list").on("click", ".shp_download", function (e) {
+  let out_crs = jQuery(".export_crs").text();
   let data = {
     json_path: e.target.value,
-    type: 'shp'
+    type: 'shp',
+    crs: out_crs
   };
 
   ipcRenderer.send("save_outbound", data);
@@ -36,9 +38,11 @@ jQuery(".layers-list").on("click", ".geojson_download", function (e) {
   ipcRenderer.send("save_outbound", data);
 });
 jQuery(".layers-list").on("click", ".kml_download", function (e) {
+  let out_crs = jQuery(".export_crs").text();
   let data = {
     json_path: e.target.value,
-    type: 'kml'
+    type: "kml",
+    crs: out_crs,
   };
   ipcRenderer.send("save_outbound", data);
 });

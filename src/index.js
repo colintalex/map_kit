@@ -63,7 +63,6 @@ app.on("activate", () => {
 
 function clearTempDir(){
   let directory = './tmp';
-  console.count()
   fs.readdir(directory, (err, files) => {
     if (err) throw err;
 
@@ -94,8 +93,15 @@ ipcMain.on("save_inbound", (event, arg) => {
     case "geojson":
       fsPromises.copyFile(src_path, tmp_path)
       .then(function(data){
+        return fsPromises.readFile(tmp_path, 'utf8');
+      })
+      .then(function(data){
+        let crs = data.crs ? data.crs.properties.name : 'not defined';
         event.sender.send("shp-to-geojson-reply", {
-          path: tmp_path,
+          geojson: {
+            crs: { init: crs, proj: "EPSG:4326" },
+          },
+          wgs84_path: tmp_path,
           name: path.basename(src_path),
         });
       });
@@ -116,7 +122,6 @@ ipcMain.on("save_inbound", (event, arg) => {
           fs.readFileSync(tmp_path, "utf8")
         );
         let converted = tj.kml(kml);
-        console.log(converted);
         let tempjson_path = tmp_path.replace("kml", "geojson");
         fs.writeFile(tempjson_path, JSON.stringify(converted, null, 2), (err) => {
           if (err) {
@@ -135,7 +140,6 @@ ipcMain.on("save_outbound", (event, arg) => {
   let json_path = arg.json_path;
   let type = arg.type;
   let crs = arg.crs;
-
 
   switch(type){
     case 'shp':
@@ -186,7 +190,6 @@ ipcMain.on("save_outbound", (event, arg) => {
               flag: "r",
             });
             let json = JSON.parse(raw);
-            console.log(json);
             const kml_stuff = tokml(json);
             fs.writeFile(new_path, kml_stuff, (err) => {
               if (err) {
@@ -236,9 +239,10 @@ async function convertShapeToGeoJson(src_path) {
 
 
   let data = JSON.stringify(geojson, null, 2);
-  let basename = path.basename(src_path).replace('.shp', `.geojson`);
-  let filename = path.resolve(`./tmp/${basename}`);
   let original_crs = geojson.crs.properties.name;
+  let crs_code = /\d+/.exec(original_crs)[0];
+  let basename = path.basename(src_path).replace('.shp', `_${crs_code}.geojson`);
+  let filename = path.resolve(`./tmp/${basename}`);
   fs.writeFile(filename, data, function (err) {
     if (err) {
       console.log(err);
@@ -246,13 +250,14 @@ async function convertShapeToGeoJson(src_path) {
     console.log("The file was saved!");
   });
 
-  if (original_crs.includes("4326")){
+  if (crs_code == "4326"){
     return {
       geojson: {
         data: data,
         crs: {init: original_crs}
       },
-      path: filename,
+      original_path: filename,
+      wgs84_path: filename,
       name: path.basename(src_path)
     };
   }
@@ -269,9 +274,9 @@ async function convertShapeToGeoJson(src_path) {
   
   let reproj_data = JSON.stringify(reprojected_json, null, 2);
   let reproj_basename = path.basename(src_path).replace('.shp', `_4326.geojson`);
-  let reproj_filename = path.resolve(`./tmp/${reproj_basename}`);
+  let reproj_path = path.resolve(`./tmp/${reproj_basename}`);
 
-  fs.writeFile(reproj_filename, reproj_data, function (err) {
+  fs.writeFile(reproj_path, reproj_data, function (err) {
     if (err) {
       console.log(err);
     }
@@ -281,11 +286,12 @@ async function convertShapeToGeoJson(src_path) {
   let out = {
     geojson: {
       data: reproj_data,
-      crs: { init: original_crs, proj: reprojected_crs}
+      crs: { init: original_crs, proj: reprojected_crs },
     },
-    path: filename,
-    name: path.basename(src_path)
-  }
+    original_path: filename,
+    wgs84_path: reproj_path,
+    name: path.basename(src_path),
+  };
   return out
 }
 
@@ -325,8 +331,8 @@ function generateConvertedGeoJson(json_path, crs){
   let reproj_basename = path
     .basename(json_path)
     .replace(".geojson", `_${crs.replace("EPSG:", "")}.geojson`);
-  let reproj_filename = path.resolve(`./tmp/${reproj_basename}`);
-  json_path = reproj_filename;
-  fs.writeFileSync(reproj_filename, reproj_data, 'utf8');
-  return reproj_filename;
+  let reproj_path = path.resolve(`./tmp/${reproj_basename}`);
+  json_path = reproj_path;
+  fs.writeFileSync(reproj_path, reproj_data, 'utf8');
+  return reproj_path;
 }

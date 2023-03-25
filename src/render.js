@@ -13,6 +13,10 @@ ipcRenderer.on("shp-to-geojson-reply", (event, arg) => {
 });
 
 jQuery(".layers-list").on("click", ".download", function (e) {
+  let crrrs = jQuery(".export_crs").data('value');
+  alert('Uh-oh! No Projection Selected for Export')
+  return false;
+
   let out_crs = jQuery(".export_crs").text();
   let data = {
     json_path: e.target.dataset['wgs84'],
@@ -23,11 +27,17 @@ jQuery(".layers-list").on("click", ".download", function (e) {
 });
 
 jQuery(".layers-list").on("click", ".dropbtn", function (e) {
-  toggleCrsMenu();
+  myFunction();
+});
+
+jQuery(".layers-list").on("click", "input[type=radio]", function (e) {
+  jQuery(".export_crs").text(this.value);
+  jQuery(".export_crs").dataset.value(this.value);
 });
 
 jQuery(".layers-list").on("click", "a", function (e) {
   jQuery(".export_crs").text(this.text);
+  jQuery(".export_crs").dataset.value(this.text);
   document.getElementById("crsDropdown").classList.remove('show')
 });
 
@@ -78,11 +88,9 @@ document.addEventListener("dragleave", (event) => {
 // ========================================================================
 // ========================================================================
 
-function toggleCrsMenu() {
-  document.getElementById("crsDropdown").classList.toggle("show");
-}
 
 function filterFunction() {
+  var input, filter, ul, li, a, i;
   var input, filter, ul, li, a, i;
   input = document.getElementById("myInput");
   filter = input.value.toUpperCase();
@@ -107,27 +115,71 @@ function updateLayersList(f){
 
   let list = [];
   for (let i = 0;i< keys.length; i++){
-    list.push(`<a href="#">${keys[i]}</a>`);
+    list.push(`<a class="hide" href="#">${keys[i]}</a>`);
   }
 
   div.innerHTML = `
     <div alt="${f.name}">
-    <p>${f.name}</p>
-    <p>Original CRS: ${f.geojson.crs.init}</p>
-    <p>Current CRS: ${f.geojson.crs.proj}</p>
+    <div class="layer_info">
+      <div>${f.name}</div>
+      <div><span class="label">Original CRS:</span><span class="label_value">${
+        f.geojson.crs.init
+      }</span></div>
+      <div><span class="label">Current CRS:</span><span class="label_value">${
+        f.geojson.crs.proj
+      }</span></div>
+    </div>
     <hr>
-    <h5>Export as: <span class='export_crs'></span></h5>
+    <h5 class="export_projection">Export as: <span class='export_crs'>select an EPSG code to export</span></h5>
     <div class="dropdown">
-      <button class="dropbtn">EPSG:____</button>
+      <button class="dropbtn">EPSG Code</button>
       <div id="crsDropdown" class="dropdown-content">
+        <div class="crs_list">
+          ${list.join("")}
+        </div>
         <input type="text" placeholder="Search.." id="myInput">
-        ${list.join('')}
       </div>
     </div>
-    <button class='download shp_download' id='${f.name}' value='shp' data-original='${f.original_path}' data-wgs84='${f.wgs84_path}'>SHP</button>
-    <button class='download geojson_download' id='${f.name}' value='geojson' data-original='${f.original_path}' data-wgs84='${f.wgs84_path}'>GeoJSON</button>
-    <button class='download kml_download' id='${f.name}' value='kml' data-original='${f.original_path}' data-wgs84='${f.wgs84_path}'>KML</button>
+    <form class="crs_presets">
+    <label class="radio-inline">
+      <input type="radio" name="optradio" value="EPSG:4326">4326
+    </label>
+    <label class="radio-inline">
+      <input type="radio" name="optradio" value="EPSG:3857">3857
+    </label>
+    <label class="radio-inline">
+      <input type="radio" name="optradio" value="urn:ogc:def:crs:EPSG::4326">urn:4326
+    </label>
+    <label class="radio-inline">
+      <input type="radio" name="optradio" value="urn:ogc:def:crs:EPSG::3857">urn:3857
+    </label>
+    </form>
+
+    <hr>
+    <div class="export_buttons">
+      <button class='download shp_download' id='${
+        f.name
+      }' value='shp' data-original='${f.original_path}' data-wgs84='${
+    f.wgs84_path
+  }'>SHP</button>
+      <button class='download geojson_download' id='${
+        f.name
+      }' value='geojson' data-original='${f.original_path}' data-wgs84='${
+    f.wgs84_path
+  }'>GeoJSON</button>
+      <button class='download kml_download' id='${
+        f.name
+      }' value='kml' data-original='${f.original_path}' data-wgs84='${
+    f.wgs84_path
+  }'>KML (4326)</button>
+    </div>
     </div>
       `;
   layerList.appendChild(div);
+}
+
+/* When the user clicks on the button,
+toggle between hiding and showing the dropdown content */
+function myFunction() {
+  document.getElementById("crsDropdown").classList.toggle("show");
 }

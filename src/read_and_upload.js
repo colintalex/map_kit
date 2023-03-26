@@ -8,7 +8,7 @@ module.exports.detectAndUpload = function (f) {
       Json(f.path);
       break;
     case "kml":
-      KML(f.path);
+      Kml(f.path);
       break;
     case "shp":
       Shp(f.path);

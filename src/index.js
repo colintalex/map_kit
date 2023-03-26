@@ -37,7 +37,7 @@ const createWindow = () => {
 
   mainWindow.loadFile(path.join(__dirname, "index.html"));
 
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 };
 
 app.on("ready", createWindow);
@@ -62,7 +62,7 @@ app.on("activate", () => {
 // =======================================================
 
 function clearTempDir(){
-  let directory = './tmp';
+  let directory = path.resolve('./tmp/vector_files');
   fs.readdir(directory, (err, files) => {
     if (err) throw err;
 
@@ -78,7 +78,8 @@ ipcMain.on("save_inbound", (event, arg) => {
   let src_path = arg.path;
   let type = arg.type;
   let basename = path.basename(src_path);
-  let tmp_path = path.resolve(`./tmp/${basename}`);
+  let tmp_path = path.resolve(`./tmp/vector_files/${basename}`);
+
   switch (type) {
     case "shp":
       convertShapeToGeoJson(src_path)
@@ -96,7 +97,16 @@ ipcMain.on("save_inbound", (event, arg) => {
         return fsPromises.readFile(tmp_path, 'utf8');
       })
       .then(function(data){
-        let crs = data.crs ? data.crs.properties.name : 'not defined';
+        let crs;
+        if (data.crs){
+          crs = data.crs.properties.name
+          if (crs != "EPSG:4326") tmp_path = generateConvertedGeoJson(tmp_path, crs);
+        }else{
+          // if not defined, assume 4326. 
+          // TODO: User Redefine projection(if incorrectly read)
+          crs = "not defined"
+        }
+
         event.sender.send("shp-to-geojson-reply", {
           geojson: {
             crs: { init: crs, proj: "EPSG:4326" },
@@ -123,12 +133,23 @@ ipcMain.on("save_inbound", (event, arg) => {
         );
         let converted = tj.kml(kml);
         let tempjson_path = tmp_path.replace("kml", "geojson");
-        fs.writeFile(tempjson_path, JSON.stringify(converted, null, 2), (err) => {
+        let json_crs = makeJsonCrs('EPSG:4326');
+        let full_json = Object.assign(json_crs, converted);
+        fs.writeFile(tempjson_path, JSON.stringify(full_json, null, 2), (err) => {
           if (err) {
             console.error(err);
           }
           // file written successfully
-          let payload = {  path: tempjson_path, name: path.basename(src_path) };
+          let payload = {  
+            wgs84_path: tempjson_path,
+            name: path.basename(src_path),
+            geojson: {
+              crs: {
+                proj: 'EPSG:4326', 
+                init: 'EPSG:4326' 
+              }
+            }
+          };
           event.sender.send("shp-to-geojson-reply", payload);
         });
       });
@@ -242,7 +263,7 @@ async function convertShapeToGeoJson(src_path) {
   let original_crs = geojson.crs.properties.name;
   let crs_code = /\d+/.exec(original_crs)[0];
   let basename = path.basename(src_path).replace('.shp', `_${crs_code}.geojson`);
-  let filename = path.resolve(`./tmp/${basename}`);
+  let filename = path.resolve(`./tmp/vector_files/${basename}`);
   fs.writeFile(filename, data, function (err) {
     if (err) {
       console.log(err);
@@ -274,7 +295,7 @@ async function convertShapeToGeoJson(src_path) {
   
   let reproj_data = JSON.stringify(reprojected_json, null, 2);
   let reproj_basename = path.basename(src_path).replace('.shp', `_4326.geojson`);
-  let reproj_path = path.resolve(`./tmp/${reproj_basename}`);
+  let reproj_path = path.resolve(`./tmp/vector_files/${reproj_basename}`);
 
   fs.writeFile(reproj_path, reproj_data, function (err) {
     if (err) {
@@ -317,22 +338,35 @@ function generateConvertedGeoJson(json_path, crs){
   const reprojected_crs = crs;
 
   console.log("------------------");
-  console.log(`Converting from ${original_json.crs.properties.name} to ${crs}`);
+  console.log(`Converting from ${original_json.crs?.properties?.name || 'ESPG:4326'} to ${crs}`);
   console.log("------------------");
 
   const reprojected_json = reproject.reproject(
     original_json,
     original_json.crs.properties.name,
-    crs,
+    reprojected_crs,
     epsg
   );
   reprojected_json.crs.properties.name = reprojected_crs;
   let reproj_data = JSON.stringify(reprojected_json, null, 2);
   let reproj_basename = path
     .basename(json_path)
-    .replace(".geojson", `_${crs.replace("EPSG:", "")}.geojson`);
-  let reproj_path = path.resolve(`./tmp/${reproj_basename}`);
+    .replace(/_\d+\.geojson/, `_${crs.replace("EPSG:", "")}.geojson`);
+  let reproj_path = path.resolve(`./tmp/vector_files/${reproj_basename}`);
   json_path = reproj_path;
   fs.writeFileSync(reproj_path, reproj_data, 'utf8');
   return reproj_path;
+}
+
+function makeJsonCrs(code_str){
+  let crs_data = {
+    crs: {
+      type: "name",
+      properties: {
+        name: code_str,
+      }
+    },
+  }
+  
+  return crs_data
 }

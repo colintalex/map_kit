@@ -20,14 +20,23 @@ body {
   width: 100%;
   background-color: gray;
   color: white;
+  padding: 0 20px;
+}
+
+#header div {
+  height: 100%;
+  display: table;
 }
 
 #header h1 {
   margin-top: 0;
+  display: table-cell;
+  vertical-align: middle;
+  font-size: 28px;
 }
 
 #map {
-  height: calc(100% - 60px);
+  height: 100%;
   width: 100%;
 }
 
@@ -82,6 +91,15 @@ body {
 .crs_presets {
   display: inline;
   font-size: 13px;
+}
+
+
+/*  */
+/*  */
+/*  */
+
+.layer_actions.macro {
+  float: right !important; 
 }
 
 /*  */

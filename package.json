@@ -19,7 +19,10 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.3.0",
+    "@popperjs/core": "^2.11.7",
     "@tmcw/togeojson": "^5.6.0",
+    "bootstrap": "^5.2.3",
     "decompress": "^4.2.1",
     "electron-squirrel-startup": "^1.0.0",
     "epsg": "^0.5.0",
@@ -28,6 +31,7 @@
     "jquery": "^3.6.3",
     "kml-to-json": "^1.1.1",
     "leaflet": "^1.7.1",
+    "popper.js": "^1.16.1",
     "prj2epsg": "^1.0.0",
     "reproject": "^1.2.7",
     "shapefile-to-geojson": "github:colintalex/shapefile-to-geojson",

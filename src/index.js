@@ -258,9 +258,9 @@ async function convertShapeToGeoJson(src_path) {
   let src_prj_path = src_path.replace('.shp','.prj');
   const geojson = await shapefileToGeojson.parseFiles(src_path, src_dbf_path, src_prj_path);
 
-
   let data = JSON.stringify(geojson, null, 2);
   let original_crs = geojson.crs.properties.name;
+  console.log(original_crs)
   let crs_code = /\d+/.exec(original_crs)[0];
   let basename = path.basename(src_path).replace('.shp', `_${crs_code}.geojson`);
   let filename = path.resolve(`./tmp/vector_files/${basename}`);

@@ -12,7 +12,7 @@ let map = MapUtils.buildMap('map');
 
 ipcRenderer.on("shp-to-geojson-reply", (event, arg) => {
   updateLayersList(arg);
-  MapUtils.addJSONToMap(arg.wgs84_path, map);
+  MapUtils.addJSONToMap(arg, map);
 });
 
 $(".layers-list").on("click", ".download", function (e) {
@@ -30,7 +30,6 @@ $(".layers-list").on("click", ".download", function (e) {
     crs: out_crs
   };
 
-  debugger
   ipcRenderer.send("save_outbound", data);
 });
 

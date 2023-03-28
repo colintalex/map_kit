@@ -47,7 +47,7 @@ module.exports.addJSONToMap = function(arg, map) {
   let short = geojson.features.slice(0, 30_000);
   geojson.features = short;
   let feature_type = geojson.features[0].geometry.type;
-  
+
   switch(feature_type){
     case 'Polygon':
       addPolygon(geojson, arg, map)
@@ -67,10 +67,10 @@ module.exports.addJSONToMap = function(arg, map) {
         bounds.extend(feature.geometry.coordinates[0][0])
         map.fitBounds(bounds);
         break;
-        case 'LineString':
-          bounds.extend(feature.geometry.coordinates);
+      case 'LineString':
+          bounds.extend(feature.geometry.coordinates[0].slice(0,2));
           map.fitBounds(bounds);
-      break;
+        break;
       case 'Point':
         // map.setCenter(feature.geometry.coordinates);
         let coords = feature.geometry.coordinates;

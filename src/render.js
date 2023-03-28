@@ -1,6 +1,7 @@
 const $ = window.$ = window.jQuery = require('jquery');
 window.Bootstrap = require("bootstrap");
 window.Popper = require('@popperjs/core');
+let ShortUniqueId = require('short-unique-id');
 const { ipcRenderer } = require("electron");
 const Path = require("path");
 const epsg = require("epsg");
@@ -17,7 +18,6 @@ ipcRenderer.on("shp-to-geojson-reply", (event, arg) => {
 
 $(".layers-list").on("click", ".download", function (e) {
   let export_crs = $(".export_crs").text();
-
   if (export_crs == undefined){
     alert('Uh-oh! No Projection Selected for Export');
     return false;
@@ -91,6 +91,17 @@ document.addEventListener("dragleave", (event) => {
   console.log("File has left the Drop Space");
 });
 
+document.addEventListener('DOMContentLoaded', () => {
+  const titleBar = document.createElement('div');
+  titleBar.classList.add('title-bar');
+  titleBar.innerHTML = `
+    <div class="title-bar-draggable">
+      <span class="title-bar-title">My App</span>
+    </div>
+  `;
+  document.body.appendChild(titleBar);
+});
+
 // ========================================================================
 // ========================================================================
 // ========================================================================
@@ -124,21 +135,22 @@ function updateLayersList(f){
   for (let i = 0;i< keys.length; i++){
     list.push(`<a class="hide" href="#">${keys[i]}</a>`);
   }
-
+  const uid = new ShortUniqueId({ length: 6 });
+  let div_id = uid()
   div.innerHTML = `
     <div alt="${f.name}">
     <div>
       <span class="layer_name">
-        ${f.name}
+        ${shortenFilename(f.name, 43)}
       </span>
       <span class="layer_actions macro">
-        <a data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
+        <a data-bs-toggle="collapse" href="#${div_id}" role="button" aria-expanded="false" aria-controls="${div_id}">
         <i class="fas fa-plus"></i>
         </a>
       </span>
     </div>
 
-    <div class="collapse" id="collapseExample">
+    <div class="collapse" id="${div_id}">
       <div class="layer_info">
         <div><span class="label">Original CRS:</span><span class="label_value">${
           f.geojson?.crs?.init
@@ -206,4 +218,17 @@ function updateLayersList(f){
 toggle between hiding and showing the dropdown content */
 function myFunction() {
   document.getElementById("crsDropdown").classList.toggle("show");
+}
+
+function shortenFilename(filename, maxLength) {
+  const extension = filename.slice(filename.lastIndexOf('.'));
+  const ellipsis = '...';
+  if (filename.length <= maxLength) {
+    return filename;
+  }
+  const prefixLength = Math.ceil((maxLength - ellipsis.length - extension.length) / 2);
+  const suffixLength = Math.floor((maxLength - ellipsis.length - extension.length) / 2);
+  const prefix = filename.slice(0, prefixLength);
+  const suffix = filename.slice(-suffixLength);
+  return `${prefix}${ellipsis}${suffix}${extension}`;
 }

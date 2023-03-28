@@ -24,6 +24,7 @@
     "@popperjs/core": "^2.11.7",
     "@tmcw/togeojson": "^5.6.0",
     "bootstrap": "^5.2.3",
+    "custom-electron-titlebar": "^4.2.0-beta.0",
     "decompress": "^4.2.1",
     "electron-squirrel-startup": "^1.0.0",
     "epsg": "^0.5.0",
@@ -41,8 +42,8 @@
     "prj2epsg": "^1.0.0",
     "reproject": "^1.2.7",
     "shapefile-to-geojson": "github:colintalex/shapefile-to-geojson",
+    "short-unique-id": "^4.4.4",
     "stream-json": "^1.7.5",
-    "webdriverio": "^8.6.9",
     "xmldom": "^0.6.0"
   },
   "devDependencies": {

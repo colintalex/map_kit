@@ -1,3 +1,21 @@
+.titlebar {
+  background-color: #3d2890;
+  height: 30px;
+  border-bottom: 2px solid #2f1f71a4;
+  -webkit-app-region: drag;
+  /* Allow user to drag the window using this titlebar */
+  -webkit-user-select: none;
+  /* Prevent user from selecting things */
+  user-select: none;
+  text-align: center;
+  padding-top: 2px;
+  color: whitesmoke;
+}
+
+.titlebar span {
+  padding-top: 2px;
+}
+
 html {
   margin: 0;
   padding: 0;
@@ -45,11 +63,21 @@ body {
   bottom: 20px;
   left: 20px;
   height: auto;
-  background: white;
   z-index: 1000;
   width: 400px;
   border-radius: 10px;
   padding: 10px;
+}
+
+.layers-list .layer {
+  margin: 4px 0;
+  border-bottom: 1px solid lightgray;
+  padding: 5px;
+  border-right: 1px solid lightgray;
+  border-radius: 7px;
+  border-left: 1px solid #f2f2f2;
+  background: white;
+  padding: 10px 5px;
 }
 
 /*  */
@@ -64,6 +92,7 @@ body {
 .export_buttons {
   text-align: center;
 }
+
 .export_buttons button {
   margin: 0 4px;
 }
@@ -71,13 +100,16 @@ body {
 .layer_info {
   font-size: 14px;
 }
+
 .layer_info div {
   margin: 14px 0;
   height: 14px;
 }
+
 .layer_info .label {
   float: left;
 }
+
 .layer_info .label_value {
   float: right;
   background: #2323239c;
@@ -99,7 +131,7 @@ body {
 /*  */
 
 .layer_actions.macro {
-  float: right !important; 
+  float: right !important;
 }
 
 /*  */

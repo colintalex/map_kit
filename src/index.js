@@ -1,17 +1,15 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, screen } = require("electron");
 const path = require("path");
 const { ipcMain } = require("electron");
 const { dialog } = require("electron");
 const { convert } = require("geojson2shp");
 const fs = require('fs');
 const shapefileToGeojson = require("shapefile-to-geojson");
-const decompress = require("decompress");
 const reproject = require("reproject");
 const epsg = require("epsg");
 const prj2epsg = require("prj2epsg");
 const fsPromises = require("fs").promises;
 const tokml =  require('geojson-to-kml');
-const kmlToJson = require("kml-to-json");
 const tj = require("@tmcw/togeojson");
 
 const DOMParser = require("xmldom").DOMParser;
@@ -22,10 +20,15 @@ if (require("electron-squirrel-startup")) {
 }
 
 const createWindow = () => {
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    x: 0,
+    y: height - 800,
+    titleBarStyle: 'hidden',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -37,7 +40,8 @@ const createWindow = () => {
 
   mainWindow.loadFile(path.join(__dirname, "index.html"));
 
-  mainWindow.webContents.openDevTools();
+
+  // mainWindow.webContents.openDevTools();
 };
 
 app.on("ready", createWindow);
@@ -139,7 +143,7 @@ ipcMain.on("save_inbound", (event, arg) => {
 ipcMain.on("save_outbound", (event, arg) => {
   let json_path = arg.json_path;
   let type = arg.type;
-  let crs = arg.crs;
+  let out_crs = arg.crs;
 
   switch(type){
     case 'shp':
@@ -158,7 +162,12 @@ ipcMain.on("save_outbound", (event, arg) => {
       break;
     case 'geojson':
       let out_path = path.resolve("~/Desktop/test.geojson")
-      if (crs != "EPSG:4326") json_path = generate4326GeoJson(json_path, crs);
+      let data = fs.readFileSync(json_path, 'utf8');
+      let json_data = JSON.parse(data);
+      let original_crs = json_data.crs.properties.name;
+      const reprojected_json = reproject.reproject(json_data, original_crs, out_crs, epsg);
+      reprojected_json.crs.properties.name =  out_crs;
+
       dialog
         .showSaveDialog({
           properties: ["createDirectory"],
@@ -170,7 +179,8 @@ ipcMain.on("save_outbound", (event, arg) => {
           if (data.canceled) return false;
 
           let new_path = data.filePath;
-          fs.copyFile(json_path, new_path, (err) => {
+          let str = JSON.stringify(reprojected_json, null, 2);
+          fs.writeFile(new_path, str, (err) => {
             console.log(err);
           });
         });
@@ -235,12 +245,19 @@ function removeTempFile(temp_path) {
 async function convertShapeToGeoJson(src_path) {
   let src_dbf_path = src_path.replace('.shp','.dbf');
   let src_prj_path = src_path.replace('.shp','.prj');
-  const geojson = await shapefileToGeojson.parseFiles(src_path, src_dbf_path, src_prj_path);
+  let geojson = await shapefileToGeojson.parseFiles(src_path, src_dbf_path, src_prj_path);
 
+  let prj_data = fs.readFileSync(src_prj_path, 'ascii');
   let data = JSON.stringify(geojson, null, 2);
-  let original_crs = geojson.crs.properties.name;
-  let crs_code = /\d+/.exec(original_crs)[0];
-  let basename = path.basename(src_path).replace('.shp', `_${crs_code}.geojson`);
+  let prj_code = prj2epsg.fromPRJ(prj_data) || 4326;
+  let prj_code_str = `EPSG:${prj_code}`
+  
+  if(geojson.crs == undefined){
+    let crs_obj = makeJsonCrs(prj_code);
+    geojson = Object.assign(crs_obj, geojson)
+  }
+
+  let basename = path.basename(src_path).replace('.shp', `_${prj_code}.geojson`);
   let filename = path.resolve(`./tmp/vector_files/${basename}`);
   fs.writeFile(filename, data, function (err) {
     if (err) {
@@ -249,11 +266,11 @@ async function convertShapeToGeoJson(src_path) {
     console.log("The file was saved!");
   });
 
-  if (crs_code == "4326"){
+  if (prj_code == 4326){
     return {
       geojson: {
         data: geojson,
-        crs: {init: original_crs}
+        crs: {init: prj_code_str}
       },
       original_path: filename,
       wgs84_path: filename,
@@ -263,10 +280,10 @@ async function convertShapeToGeoJson(src_path) {
 
   // save a copy original file
   // create a copy of wgs84 transformed file
-  const reprojected_crs = "urn:ogc:def:crs:EPSG::4326";
+  const reprojected_crs = "EPSG:4326";
   const reprojected_json = reproject.toWgs84(
     geojson,
-    geojson.crs.properties.name,
+    prj_code_str,
     epsg
   );
   reprojected_json.crs.properties.name = reprojected_crs;
@@ -285,7 +302,7 @@ async function convertShapeToGeoJson(src_path) {
   let out = {
     geojson: {
       data: reprojected_json,
-      crs: { init: original_crs, proj: reprojected_crs },
+      crs: { init: prj_code_str, proj: reprojected_crs },
     },
     original_path: filename,
     wgs84_path: reproj_path,
@@ -321,7 +338,6 @@ function isJson(str){
 };
 
 function generate4326GeoJson(json_data){
-  
   let original_json     = isJson(json_data);
   const original_crs    = original_json.crs?.properties?.name;
   const reprojected_crs = 'EPSG:4326';
@@ -329,7 +345,6 @@ function generate4326GeoJson(json_data){
   console.log("------------------");
   console.log(`Converting from ${original_crs || 'ESPG:4326'} to ${reprojected_crs}`);
   console.log("------------------");
-
   const reprojected_json = reproject.reproject(original_json, original_crs, reprojected_crs, epsg);
   reprojected_json.crs.properties.name = reprojected_crs;
 
@@ -357,18 +372,12 @@ async function saveInboundJson(from_path, to_path, event) {
     let orig_crs = geojson.crs?.properties?.name;
     let new_json;
     let reprojected = false;
-    let crs_is_4326 =
-      orig_crs && !orig_crs.includes("4326") && !orig_crs.includes("CRS84");
-
-    if (crs_is_4326){ 
+    let crs_is_4326 = orig_crs?.includes("4326");
+    if (!crs_is_4326){ 
       reprojected = true;
       console.log('convert')
       new_json = generate4326GeoJson(geojson);
-    } else {
-      console.log('nope');
-      let out_crs = 'undefined';
-      let json_crs = makeJsonCrs(out_crs);
-      new_json = Object.assign(json_crs, geojson);
+      geojson = new_json;
     }
 
 
@@ -389,7 +398,7 @@ async function saveInboundJson(from_path, to_path, event) {
 
     event.sender.send("shp-to-geojson-reply", {
       geojson: {
-        crs: { init: crs, proj: "EPSG:4326" },
+        crs: { init: orig_crs, proj: crs },
         data: geojson,
       },
       wgs84_path: to_path,

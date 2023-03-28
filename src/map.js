@@ -44,31 +44,66 @@ module.exports.addJSONToMap = function(arg, map) {
   let file_path = arg.wgs84_path;
   let geojson = arg.geojson.data;
   let feature_count = geojson.features.length;
-
-  if (feature_count > 1_000_000){
-    func2(geojson, arg, map);
-  }else{
-    func1(geojson, arg, map);
-  }
-}
-
-function func1(geojson, arg, map) {
   let short = geojson.features.slice(0, 30_000);
   geojson.features = short;
+  let feature_type = geojson.features[0].geometry.type;
   
-  var options = {
-    maxZoom: 19,
-    tolerance: 3,
-    debug: 0,
-    style: {
-      fillColor: "#1EB300",
-      color: "#F2FF00",
-    },
-  };
-  // Add a data source containing GeoJSON data.
+  switch(feature_type){
+    case 'Polygon':
+      addPolygon(geojson, arg, map)
+      break;
+    case 'LineString':
+      addPolygon(geojson, arg, map)
+      break;
+    case 'Point':
+      addPoint(geojson, arg, map)
+      break;
+  }
+  // Add a data source containing GeoJSON data
+  var bounds = new mapboxgl.LngLatBounds();
+  geojson.features.forEach(function (feature) {
+    switch(feature.geometry.type){
+      case 'Polygon':
+        bounds.extend(feature.geometry.coordinates[0][0])
+        map.fitBounds(bounds);
+        break;
+        case 'LineString':
+          bounds.extend(feature.geometry.coordinates);
+          map.fitBounds(bounds);
+      break;
+      case 'Point':
+        // map.setCenter(feature.geometry.coordinates);
+        let coords = feature.geometry.coordinates;
+        const lat = coords[1];
+        const lng = coords[0];
+
+        // Create a new LngLat object for the point
+        const point = new mapboxgl.LngLat(lng, lat);
+
+        // Define the buffer distance in meters
+        const bufferDistance = 500;
+
+        // Calculate the bounding box based on the point and buffer distance
+        bounds.extend(
+          point.toBounds(bufferDistance).getSouthWest(),
+          point.toBounds(bufferDistance).getNorthEast()
+        );
+        // Set the map's bounds to the custom bounds
+        map.fitBounds(bounds);
+      break;
+    }
+  });
+  
+  // let featuregroup = L.featureGroup().addTo(map);
+  // L.geoJson.vt(geojson, options).addTo(featuregroup);
+  // let bounds = L.geoJSON(geojson.features[0]).getBounds();
+  // map.fitBounds(bounds).setZoom(12);
+}
+
+function addPolygon(geojson, arg, map) {
   map.addSource(arg.name, {
     type: "geojson",
-    data: geojson
+    data: geojson,
   });
 
   // Add a new layer to visualize the polygon.
@@ -93,26 +128,33 @@ function func1(geojson, arg, map) {
       "line-width": 3,
     },
   });
-
-  // let featuregroup = L.featureGroup().addTo(map);
-  // L.geoJson.vt(geojson, options).addTo(featuregroup);
-  // let bounds = L.geoJSON(geojson.features[0]).getBounds();
-  // map.fitBounds(bounds).setZoom(12);
 }
+function addPoint(geojson, arg, map) {
+  map.addSource(arg.name, {
+    type: "geojson",
+    data: geojson,
+  });
 
-function func2(geojson, arg, map) {
-  let layer = L.geoJSON(geojson, {
-    onEachFeature: function (feature, layer) {
-      let props = Object.entries(feature.properties);
-      layer.bindPopup(
-        `${props
-          .map(function (x) {
-            return `<h4>${x[0]}: ${x[1]}</h4>`;
-          })
-          .join("\n")}`
-      );
+  // Add a new layer to visualize the polygon.
+  map.addLayer({
+    id: arg.name,
+    type: "circle",
+    source: arg.name, // reference the data source
+    layout: {},
+    paint: {
+      "circle-color": "#ff0000", // set the circle color to red
+      "circle-radius": 8, // set the circle radius to 8 pixels
     },
-  }).addTo(map);
-  map.fitBounds(layer.getBounds());
-
+  });
+  // Add a black outline around the polygon.
+  // map.addLayer({
+  //   id: `${arg.name}_outline`,
+  //   type: "line",
+  //   source: arg.name,
+  //   layout: {},
+  //   paint: {
+  //     "line-color": "#000",
+  //     "line-width": 3,
+  //   },
+  // });
 }

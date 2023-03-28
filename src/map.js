@@ -35,11 +35,6 @@ module.exports.buildMap = function (div_id) {
   return map;
 }
 
-async function loadJSON(url) {
-  const res = await fetch(url);
-  return await res.json();
-}
-
 module.exports.addJSONToMap = function(arg, map) {
   let file_path = arg.wgs84_path;
   let geojson = arg.geojson.data;
@@ -53,7 +48,10 @@ module.exports.addJSONToMap = function(arg, map) {
       addPolygon(geojson, arg, map)
       break;
     case 'LineString':
-      addPolygon(geojson, arg, map)
+      addPolygon(geojson, arg, map);
+      break;
+    case 'MultiLineString':
+      addPolygon(geojson, arg, map);
       break;
     case 'Point':
       addPoint(geojson, arg, map)
@@ -65,11 +63,15 @@ module.exports.addJSONToMap = function(arg, map) {
     switch(feature.geometry.type){
       case 'Polygon':
         bounds.extend(feature.geometry.coordinates[0][0])
-        map.fitBounds(bounds);
+        map.fitBounds(bounds, {padding: 100});
         break;
       case 'LineString':
           bounds.extend(feature.geometry.coordinates[0].slice(0,2));
-          map.fitBounds(bounds);
+          map.fitBounds(bounds, {padding: 100});
+        break;
+      case 'MultiLineString':
+          bounds.extend(feature.geometry.coordinates[0].slice(0,2));
+          map.fitBounds(bounds, {padding: 100});
         break;
       case 'Point':
         // map.setCenter(feature.geometry.coordinates);
@@ -89,7 +91,7 @@ module.exports.addJSONToMap = function(arg, map) {
           point.toBounds(bufferDistance).getNorthEast()
         );
         // Set the map's bounds to the custom bounds
-        map.fitBounds(bounds);
+        map.fitBounds(bounds, {padding: 100});
       break;
     }
   });
@@ -101,6 +103,7 @@ module.exports.addJSONToMap = function(arg, map) {
 }
 
 function addPolygon(geojson, arg, map) {
+  console.log(arg.name);
   map.addSource(arg.name, {
     type: "geojson",
     data: geojson,
@@ -130,6 +133,7 @@ function addPolygon(geojson, arg, map) {
   });
 }
 function addPoint(geojson, arg, map) {
+  console.log(arg.name)
   map.addSource(arg.name, {
     type: "geojson",
     data: geojson,

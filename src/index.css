@@ -77,7 +77,7 @@ body {
   border-radius: 7px;
   border-left: 1px solid #f2f2f2;
   background: white;
-  padding: 10px 5px;
+  padding: 12px;
 }
 
 /*  */
@@ -85,12 +85,18 @@ body {
 /*  */
 
 .export_projection {
-  /* display: inline-block; */
   margin: 8px;
+  font-weight: 600;
 }
 
 .export_buttons {
   text-align: center;
+}
+
+button.epsg_code_btn {
+  color: white;
+  font-size: 13px;
+  padding: 4px 8px;
 }
 
 .export_buttons button {
@@ -117,8 +123,30 @@ body {
   border-radius: 5px;
   color: whitesmoke;
   font-weight: 600;
-  text-shadow: 1px 0.6px 1px black;
+  text-shadow: 0.6px 0.6px 3px black;
 }
+
+.layer_info .label_value.current {
+  float: right;
+  background: #23a539;
+  padding: 2px 10px;
+  border-radius: 5px;
+  color: whitesmoke;
+  font-weight: 600;
+  text-shadow: 0.6px 0.6px 3px black;
+}
+
+.export_crs {
+  float: right;
+  background: #3acac8;
+  padding: 2px 10px;
+  border-radius: 5px;
+  color: whitesmoke;
+  font-weight: 600;
+  text-shadow: 0.6px 0.6px 3px black;
+}
+
+
 
 .crs_presets {
   display: inline;

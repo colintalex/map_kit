@@ -10,7 +10,8 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "echo \"No linting configured\""
+    "lint": "echo \"No linting configured\"",
+    "test": "mocha"
   },
   "keywords": [],
   "author": {
@@ -34,12 +35,14 @@
     "leaflet": "^1.7.1",
     "leaflet-geojson-vt": "^1.1.0",
     "leaflet.markercluster": "^1.5.3",
+    "mapbox-gl": "^2.13.0",
     "n": "^9.0.1",
     "popper.js": "^1.16.1",
     "prj2epsg": "^1.0.0",
     "reproject": "^1.2.7",
     "shapefile-to-geojson": "github:colintalex/shapefile-to-geojson",
     "stream-json": "^1.7.5",
+    "webdriverio": "^8.6.9",
     "xmldom": "^0.6.0"
   },
   "devDependencies": {
@@ -48,6 +51,7 @@
     "@electron-forge/maker-rpm": "^6.0.5",
     "@electron-forge/maker-squirrel": "^6.0.5",
     "@electron-forge/maker-zip": "^6.0.5",
-    "electron": "23.1.1"
+    "electron": "23.1.1",
+    "mocha": "^10.2.0"
   }
 }

@@ -1,7 +1,7 @@
 const { app, BrowserWindow, screen } = require("electron");
 const path = require("path");
 const { ipcMain } = require("electron");
-const { dialog } = require("electron");
+const { dialog, autoUpdater } = require("electron");
 const { convert } = require("geojson2shp");
 const fs = require('fs');
 const shapefileToGeojson = require("shapefile-to-geojson");
@@ -11,6 +11,9 @@ const prj2epsg = require("prj2epsg");
 const fsPromises = require("fs").promises;
 const tokml =  require('geojson-to-kml');
 const tj = require("@tmcw/togeojson");
+require("dotenv").config();
+const request = require("request");
+
 
 const DOMParser = require("xmldom").DOMParser;
 
@@ -18,7 +21,7 @@ const DOMParser = require("xmldom").DOMParser;
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
-
+const GH_TOKEN = process.env.GH_ACC_TOK;
 const createWindow = () => {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
@@ -56,6 +59,81 @@ app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
+});
+
+app.on("ready", () => {
+  // Fetch latest release from GitHub API
+  request(
+    {
+      url: "https://api.github.com/repos/colintalex/map_kit/releases",
+      headers: {
+        "User-Agent": "electron-app",
+        "Accept": "application/vnd.github+json",
+        "Authorization": `Bearer ${GH_TOKEN}`,
+        "X-GitHub-Api-Version": "2022-11-28"
+      }
+    },
+    (err, res, body) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+
+      const release = JSON.parse(body)[0];
+      const currentVersion = app.getVersion();
+      // Compare latest release version with current app version
+      if (release.tag_name !== `v${currentVersion}`) {
+        // Prompt user to download latest release
+        dialog.showMessageBox(
+          {
+            type: "info",
+            message: `A new version (${release.tag_name}) is available. Do you want to download it now?`,
+            buttons: ["Yes", "No"],
+          },
+          (response) => {
+            if (response === 0) {
+              // Download latest release
+              autoUpdater.setFeedURL({
+                url: `https://github.com/:owner/:repo/releases/download/${release.tag_name}/app-${release.tag_name}.dmg`,
+              });
+              autoUpdater.checkForUpdates();
+            }
+          }
+        );
+      }
+    }
+  );
+});
+
+// Handle update events
+autoUpdater.on("update-available", () => {
+  // Notify user that update is available
+  dialog.showMessageBox({
+    type: "info",
+    message: "A new version of the app is available. Downloading now...",
+  });
+});
+
+autoUpdater.on("update-downloaded", () => {
+  // Prompt user to install update
+  dialog.showMessageBox(
+    {
+      type: "info",
+      message:
+        "The new version of the app has been downloaded. Do you want to install it now?",
+      buttons: ["Yes", "No"],
+    },
+    (response) => {
+      if (response === 0) {
+        // Install update and restart app
+        autoUpdater.quitAndInstall();
+      }
+    }
+  );
+});
+
+autoUpdater.on("error", (err) => {
+  console.error(err);
 });
 
 const temp_layer_path = app.getPath("temp");

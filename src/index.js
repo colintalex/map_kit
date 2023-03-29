@@ -349,23 +349,31 @@ async function saveInboundJson(from_path, to_path, event) {
     let orig_crs = geojson.crs?.properties?.name;
     let new_json;
     let reprojected = false;
-    let crs_is_4326 = orig_crs?.includes("4326");
-    if (!crs_is_4326){ 
-      reprojected = true;
-      console.log('convert')
-      new_json = generate4326GeoJson(geojson);
-      geojson = new_json;
+    let crs = 'EPSG:4326';
+
+    if (orig_crs != undefined){
+      if (!orig_crs.includes("4326")){
+        reprojected = true;
+        console.log('convert')
+        new_json = generate4326GeoJson(geojson);
+        geojson = new_json;
+        crs = geojson.crs.properties.name;
+      }
+    }else{
+      geojson.crs = {
+        type: '',
+        properties: {
+          name: crs
+        }
+      }
     }
 
-
-
-    let crs = new_json.crs.properties.name;
     let reproj_basename = path
       .basename(to_path)
       .replace(/_\d+\.geojson/, `_${crs.replace("EPSG:", "")}.geojson`);
     to_path = path.resolve(`${temp_layer_path}/${reproj_basename}`);
 
-    fs.writeFile(to_path, Buffer.from(JSON.stringify(new_json)), function (err) {
+    fs.writeFile(to_path, JSON.stringify(geojson), function (err) {
       if (err) {
         console.log(err);
       }

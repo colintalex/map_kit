@@ -54,6 +54,9 @@ module.exports.addJSONToMap = function(arg, map) {
     case 'Polygon':
       addPolygon(geojson, arg, map)
       break;
+    case 'MultiPolygon':
+      addPolygon(geojson, arg, map)
+      break;
     case 'LineString':
       addPolygon(geojson, arg, map);
       break;

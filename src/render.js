@@ -165,7 +165,7 @@ function updateLayersList(f){
       <hr>
       <div class="crs_options">
         <div class="dropdown">
-          <button class="dropbtn btn btn-secondary epsg_code_btn"></button>Search</button>
+          <button class="dropbtn btn btn-secondary epsg_code_btn">Search</button>
           <div id="crsDropdown" class="dropdown-content">
             <div class="crs_list">
               ${list.join("")}

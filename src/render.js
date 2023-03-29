@@ -72,6 +72,7 @@ $(".layers-list").on("click", "a", function (e) {
 document.addEventListener("drop", (event) => {
   event.preventDefault();
   event.stopPropagation();
+  $('#overlay_screen').addClass('fade_away');
 
   for (const f of event.dataTransfer.files) {
     console.log("File Path of dragged files: ", f.path);
@@ -92,16 +93,6 @@ document.addEventListener("dragleave", (event) => {
   console.log("File has left the Drop Space");
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-  const titleBar = document.createElement('div');
-  titleBar.classList.add('title-bar');
-  titleBar.innerHTML = `
-    <div class="title-bar-draggable">
-      <span class="title-bar-title">My App</span>
-    </div>
-  `;
-  document.body.appendChild(titleBar);
-});
 
 // ========================================================================
 // ========================================================================
@@ -174,7 +165,7 @@ function updateLayersList(f){
       <hr>
       <div class="crs_options">
         <div class="dropdown">
-          <button class="dropbtn btn btn-secondary epsg_code_btn">Search</button>
+          <button class="dropbtn btn btn-secondary epsg_code_btn"></button>Search</button>
           <div id="crsDropdown" class="dropdown-content">
             <div class="crs_list">
               ${list.join("")}

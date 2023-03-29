@@ -17,10 +17,10 @@ module.exports.buildMap = function (div_id) {
     "pk.eyJ1IjoiY29saW50YWxleCIsImEiOiJjbGZydTY5NDYwYngwM3ptYmc5dmZ1ZGFuIn0.cXRnKZ76mMQg1vS_xHD-8w";
   const map = new mapboxgl.Map({
     container: div_id, // container ID
-    projection: 'mercator',
+    projection: "mercator",
     style: "mapbox://styles/mapbox/streets-v12", // style URL
-    center: [-74.5, 40], // starting position [lng, lat]
-    zoom: 9, // starting zoom
+    center: [-105.0423, 38.8409], // starting position [lng, lat]
+    zoom: 11.5, // starting zoom
   });
   
   // let map = L.map(div_id).setView([38.505, -98.09], 4);
@@ -48,7 +48,8 @@ module.exports.addJSONToMap = function(arg, map) {
     closeButton: false,
     closeOnClick: true,
   });
-  
+
+
   switch(feature_type){
     case 'Polygon':
       addPolygon(geojson, arg, map)
@@ -113,22 +114,14 @@ module.exports.addJSONToMap = function(arg, map) {
           var feature = features[0];
 
           // do something with the feature (e.g. show a popup)
-          new mapboxgl.Popup()
-            .setLngLat(e.lngLat)
-            .setHTML(createListFromObject(feature.properties))
-            .addTo(map);
+            popup
+              .setLngLat(e.lngLat)
+              .setHTML(createListFromObject(feature.properties))
+              .addTo(map);
         }
       });
   });
 
-  map.on("click", "my-layer", function (e) {
-    const feature = e.features[0];
-
-  popup
-    .setLngLat(e.lngLat)
-    .setHTML(createListFromObject(feature.properties))
-    .addTo(map);
-  });
   // let featuregroup = L.featureGroup().addTo(map);
   // L.geoJson.vt(geojson, options).addTo(featuregroup);
   // let bounds = L.geoJSON(geojson.features[0]).getBounds();

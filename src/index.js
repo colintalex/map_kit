@@ -35,8 +35,6 @@ const createWindow = () => {
       // preload: path.join(__dirname, 'preload.js'),
     },
   });
-  mainWindow.on("closed", () => clearTempDir());
-
 
   mainWindow.loadFile(path.join(__dirname, "index.html"));
 
@@ -49,7 +47,7 @@ app.on("ready", createWindow);
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     // TODO: clear temp dir
-    clearTempDir();
+    // clearTempDir();
     app.quit();
   }
 });
@@ -60,13 +58,13 @@ app.on("activate", () => {
   }
 });
 
-
+const temp_layer_path = app.getPath("temp");
 // =======================================================
 // =======================================================
 // =======================================================
 
 function clearTempDir(){
-  let directory = path.resolve('./tmp/vector_files');
+  let directory = temp_layer_path;
   fs.readdir(directory, (err, files) => {
     if (err) throw err;
 
@@ -82,7 +80,7 @@ ipcMain.on("save_inbound", (event, arg) => {
   let src_path = arg.path;
   let type = arg.type;
   let basename = path.basename(src_path);
-  let tmp_path = path.resolve(`./tmp/vector_files/${basename}`);
+  let tmp_path = path.resolve(`${temp_layer_path}/${basename}`);
 
   switch (type) {
     case "shp":
@@ -221,27 +219,6 @@ ipcMain.handle("some-name", async (event, path) => {
 // ==========================================
 // ==========================================
 
-function removeTempFile(temp_path) {
-  temp_json = temp_path.replace(/(\.[\w\d_-]+)$/i, "_temp$1");
-
-  if (fs.existsSync(path)) {
-    fs.unlink(temp_json, (err) => {
-      if (err) {
-        console.error("errrrr");
-        console.error(err);
-        return;
-      }
-      //file removed
-      console.log("Temp file removed");
-    });
-  } else {
-    console.log("file not found!");
-  }
-}
-
-// ==========================================
-// ==========================================
-
 async function convertShapeToGeoJson(src_path) {
   let src_dbf_path = src_path.replace('.shp','.dbf');
   let src_prj_path = src_path.replace('.shp','.prj');
@@ -258,7 +235,7 @@ async function convertShapeToGeoJson(src_path) {
   }
 
   let basename = path.basename(src_path).replace('.shp', `_${prj_code}.geojson`);
-  let filename = path.resolve(`./tmp/vector_files/${basename}`);
+  let filename = path.resolve(`${temp_layer_path}/${basename}`);
   fs.writeFile(filename, data, function (err) {
     if (err) {
       console.log(err);
@@ -290,7 +267,7 @@ async function convertShapeToGeoJson(src_path) {
   
   let reproj_data = JSON.stringify(reprojected_json, null, 2);
   let reproj_basename = path.basename(src_path).replace('.shp', `_4326.geojson`);
-  let reproj_path = path.resolve(`./tmp/vector_files/${reproj_basename}`);
+  let reproj_path = path.resolve(`${temp_layer_path}/${reproj_basename}`);
 
   fs.writeFile(reproj_path, reproj_data, function (err) {
     if (err) {
@@ -386,7 +363,7 @@ async function saveInboundJson(from_path, to_path, event) {
     let reproj_basename = path
       .basename(to_path)
       .replace(/_\d+\.geojson/, `_${crs.replace("EPSG:", "")}.geojson`);
-    to_path = path.resolve(`./tmp/vector_files/${reproj_basename}`);
+    to_path = path.resolve(`${temp_layer_path}/${reproj_basename}`);
 
     fs.writeFile(to_path, Buffer.from(JSON.stringify(new_json)), function (err) {
       if (err) {

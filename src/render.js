@@ -8,6 +8,7 @@ const epsg = require("epsg");
 const MapUtils = require('./map');
 const readAndUpload = require('./read_and_upload');
 require("@fortawesome/fontawesome-free/js/all");
+const crypto = require('crypto');
 
 let map = MapUtils.buildMap('map');
 
@@ -71,6 +72,7 @@ $(".layers-list").on("click", "a", function (e) {
 document.addEventListener("drop", (event) => {
   event.preventDefault();
   event.stopPropagation();
+  $('#overlay_screen').addClass('fade_away');
 
   for (const f of event.dataTransfer.files) {
     console.log("File Path of dragged files: ", f.path);
@@ -91,21 +93,20 @@ document.addEventListener("dragleave", (event) => {
   console.log("File has left the Drop Space");
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-  const titleBar = document.createElement('div');
-  titleBar.classList.add('title-bar');
-  titleBar.innerHTML = `
-    <div class="title-bar-draggable">
-      <span class="title-bar-title">My App</span>
-    </div>
-  `;
-  document.body.appendChild(titleBar);
-});
 
 // ========================================================================
 // ========================================================================
 // ========================================================================
 
+
+function generateKey(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let key = '';
+  for (let i = 0; i < length; i++) {
+    key += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return key;
+}
 
 function filterFunction() {
   var input, filter, ul, li, a, i;
@@ -135,13 +136,13 @@ function updateLayersList(f){
   for (let i = 0;i< keys.length; i++){
     list.push(`<a class="hide" href="#">${keys[i]}</a>`);
   }
-  const uid = new ShortUniqueId({ length: 6 });
-  let div_id = uid()
+  const uid = generateKey(10);
+  let div_id = uid;
   div.innerHTML = `
     <div alt="${f.name}">
     <div>
       <span class="layer_name">
-        ${shortenFilename(f.name, 43)}
+        ${shortenFilename(f.name, 40)}
       </span>
       <span class="layer_actions macro">
         <a data-bs-toggle="collapse" href="#${div_id}" role="button" aria-expanded="false" aria-controls="${div_id}">
@@ -155,58 +156,65 @@ function updateLayersList(f){
         <div><span class="label">Original CRS:</span><span class="label_value">${
           f.geojson?.crs?.init
         }</span></div>
-        <div><span class="label">Current CRS:</span><span class="label_value">${
+        <div><span class="label">Current CRS:</span><span class="label_value current">${
           f.geojson?.crs?.proj
         }</span></div>
       </div>
       <hr>
       <p class="export_projection">Export as: <span class='export_crs'>select an EPSG code to export</span></p>
-      <div class="dropdown">
-        <button class="dropbtn">EPSG Code</button>
-        <div id="crsDropdown" class="dropdown-content">
-          <div class="crs_list">
-            ${list.join("")}
+      <hr>
+      <div class="crs_options">
+        <div class="dropdown">
+          <button class="dropbtn btn btn-secondary epsg_code_btn"></button>Search</button>
+          <div id="crsDropdown" class="dropdown-content">
+            <div class="crs_list">
+              ${list.join("")}
+            </div>
+            <input type="text" placeholder="Search.." id="myInput">
           </div>
-          <input type="text" placeholder="Search.." id="myInput">
+        </div>
+        <div class="crs_form_wrapper text-center">
+          <form class="crs_presets m-auto">
+          <label class="radio-inline">
+            <input type="radio" name="optradio" value="EPSG:4326">
+            4326
+          </label>
+          <label class="radio-inline">
+            <input type="radio" name="optradio" value="EPSG:3857">
+            3857
+          </label>
+          <label class="radio-inline">
+            <input type="radio" name="optradio" value="urn:ogc:def:crs:EPSG::4326">
+            urn:4326
+          </label>
+          <label class="radio-inline">
+            <input type="radio" name="optradio" value="urn:ogc:def:crs:EPSG::3857">
+            urn:3857
+          </label>
+          </form>
         </div>
       </div>
-      <form class="crs_presets">
-      <label class="radio-inline">
-        <input type="radio" name="optradio" value="EPSG:4326">
-        4326
-      </label>
-      <label class="radio-inline">
-        <input type="radio" name="optradio" value="EPSG:3857">
-        3857
-      </label>
-      <label class="radio-inline">
-        <input type="radio" name="optradio" value="urn:ogc:def:crs:EPSG::4326">
-        urn:4326
-      </label>
-      <label class="radio-inline">
-        <input type="radio" name="optradio" value="urn:ogc:def:crs:EPSG::3857">
-        urn:3857
-      </label>
-      </form>
 
       <hr>
       <div class="export_buttons">
         <i class="fa-solid fa-download float-start"></i>
-        <button class='btn btn-secondary download shp_download' id='${
-          f.name
-        }' value='shp' data-original='${f.original_path}' data-wgs84='${
-    f.wgs84_path
-  }'>SHP </button>
-        <button class='btn btn-secondary download geojson_download' id='${
-          f.name
-        }' value='geojson' data-original='${f.original_path}' data-wgs84='${
-    f.wgs84_path
-  }'>GeoJSON </button>
-        <button class='btn btn-secondary download kml_download' id='${
-          f.name
-        }' value='kml' data-original='${f.original_path}' data-wgs84='${
-    f.wgs84_path
+        <div class="button_grid">
+          <button class='btn btn-secondary download shp_download' id='${
+            f.name
+          }' value='shp' data-original='${f.original_path}' data-wgs84='${
+      f.wgs84_path
+    }'>SHP (4326)</button>
+          <button class='btn btn-secondary download geojson_download' id='${
+            f.name
+          }' value='geojson' data-original='${f.original_path}' data-wgs84='${
+      f.wgs84_path
+    }'>GeoJSON </button>
+          <button class='btn btn-secondary download kml_download' id='${
+            f.name
+          }' value='kml' data-original='${f.original_path}' data-wgs84='${
+      f.wgs84_path
   }'>KML (4326) </button>
+        </div>
       </div>
      </div>
     </div>

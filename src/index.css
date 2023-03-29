@@ -10,10 +10,39 @@
   text-align: center;
   padding-top: 2px;
   color: whitesmoke;
+  z-index: 5000;
 }
 
 .titlebar span {
   padding-top: 2px;
+}
+
+#overlay_screen {
+  height: calc(100% - 30px);
+  width: 100%;
+  background: radial-gradient(transparent, black);
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 1000;
+  opacity: 0.5;
+  text-align: center;
+  pointer-events: none !important;
+}
+
+.fade_away {
+  display: none;
+}
+
+#overlay_title {
+  color: black;
+  opacity: 1;
+}
+
+#overlay_screen .card_body {
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 html {
@@ -33,28 +62,8 @@ body {
   box-sizing: border-box;
 }
 
-#header {
-  height: 60px;
-  width: 100%;
-  background-color: gray;
-  color: white;
-  padding: 0 20px;
-}
-
-#header div {
-  height: 100%;
-  display: table;
-}
-
-#header h1 {
-  margin-top: 0;
-  display: table-cell;
-  vertical-align: middle;
-  font-size: 28px;
-}
-
 #map {
-  height: 100%;
+  height: calc(100% - 30px);
   width: 100%;
 }
 
@@ -77,7 +86,7 @@ body {
   border-radius: 7px;
   border-left: 1px solid #f2f2f2;
   background: white;
-  padding: 10px 5px;
+  padding: 12px;
 }
 
 /*  */
@@ -85,16 +94,40 @@ body {
 /*  */
 
 .export_projection {
-  /* display: inline-block; */
   margin: 8px;
+  font-weight: 600;
 }
 
 .export_buttons {
   text-align: center;
 }
 
+.export_buttons .button_grid {
+  display: grid;
+  grid-template-columns: auto auto auto;
+}
+
+button.epsg_code_btn {
+  color: white;
+  font-size: 13px;
+  padding: 4px 8px;
+}
+
 .export_buttons button {
   margin: 0 4px;
+  font-size: 12px;
+}
+
+.export_buttons button:hover {
+  background: #22bdff;
+  color: black;
+  font-weight: 600;
+}
+
+.export_buttons svg {
+  margin: 3px 6px;
+  font-size: 22px;
+  color: #5476ab;
 }
 
 .layer_info {
@@ -117,13 +150,52 @@ body {
   border-radius: 5px;
   color: whitesmoke;
   font-weight: 600;
-  text-shadow: 1px 0.6px 1px black;
+  text-shadow: 0.6px 0.6px 3px black;
+}
+
+.layer_info .label_value.current {
+  float: right;
+  background: #23a539;
+  padding: 2px 10px;
+  border-radius: 5px;
+  color: whitesmoke;
+  font-weight: 600;
+  text-shadow: 0.6px 0.6px 3px black;
+}
+
+.export_crs {
+  float: right;
+  background: #3acac8;
+  padding: 2px 10px;
+  border-radius: 5px;
+  color: whitesmoke;
+  font-weight: 600;
+  text-shadow: 0.6px 0.6px 3px black;
+}
+
+.crs_form_wrapper {
+  padding: 4px;
 }
 
 .crs_presets {
   display: inline;
   font-size: 13px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  text-align: left;
+  width: 85%;
+  margin: auto;
+  font-weight: 600;
 }
+
+.crs_options {
+  display: grid;
+  grid-template-columns: 80px auto;
+}
+
+/*  */
+/*  */
+/*  */
 
 
 /*  */

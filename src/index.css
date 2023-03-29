@@ -93,6 +93,11 @@ body {
   text-align: center;
 }
 
+.export_buttons .button_grid {
+  display: grid;
+  grid-template-columns: auto auto auto;
+}
+
 button.epsg_code_btn {
   color: white;
   font-size: 13px;
@@ -101,6 +106,19 @@ button.epsg_code_btn {
 
 .export_buttons button {
   margin: 0 4px;
+  font-size: 12px;
+}
+
+.export_buttons button:hover {
+  background: #22bdff;
+  color: black;
+  font-weight: 600;
+}
+
+.export_buttons svg {
+  margin: 3px 6px;
+  font-size: 22px;
+  color: #5476ab;
 }
 
 .layer_info {
@@ -146,13 +164,25 @@ button.epsg_code_btn {
   text-shadow: 0.6px 0.6px 3px black;
 }
 
-
+.crs_form_wrapper {
+  padding: 4px;
+}
 
 .crs_presets {
   display: inline;
   font-size: 13px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  text-align: left;
+  width: 85%;
+  margin: auto;
+  font-weight: 600;
 }
 
+.crs_options {
+  display: grid;
+  grid-template-columns: 80px auto;
+}
 
 /*  */
 /*  */

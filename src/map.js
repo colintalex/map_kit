@@ -62,7 +62,7 @@ module.exports.addJSONToMap = function(arg, map) {
   geojson.features.forEach(function (feature) {
     switch(feature.geometry.type){
       case 'Polygon':
-        bounds.extend(feature.geometry.coordinates[0][0])
+        bounds.extend(feature.geometry.coordinates[0])
         map.fitBounds(bounds, {padding: 100});
         break;
       case 'LineString':

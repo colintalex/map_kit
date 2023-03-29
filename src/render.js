@@ -173,7 +173,7 @@ function updateLayersList(f){
       <p class="export_projection">Export as: <span class='export_crs'>select an EPSG code to export</span></p>
       <hr>
       <div class="crs_options">
-        <div class="dropdown float-start m-auto">
+        <div class="dropdown">
           <button class="dropbtn btn btn-secondary epsg_code_btn">Search</button>
           <div id="crsDropdown" class="dropdown-content">
             <div class="crs_list">
@@ -207,21 +207,23 @@ function updateLayersList(f){
       <hr>
       <div class="export_buttons">
         <i class="fa-solid fa-download float-start"></i>
-        <button class='btn btn-secondary download shp_download' id='${
-          f.name
-        }' value='shp' data-original='${f.original_path}' data-wgs84='${
-    f.wgs84_path
-  }'>SHP </button>
-        <button class='btn btn-secondary download geojson_download' id='${
-          f.name
-        }' value='geojson' data-original='${f.original_path}' data-wgs84='${
-    f.wgs84_path
-  }'>GeoJSON </button>
-        <button class='btn btn-secondary download kml_download' id='${
-          f.name
-        }' value='kml' data-original='${f.original_path}' data-wgs84='${
-    f.wgs84_path
+        <div class="button_grid">
+          <button class='btn btn-secondary download shp_download' id='${
+            f.name
+          }' value='shp' data-original='${f.original_path}' data-wgs84='${
+      f.wgs84_path
+    }'>SHP (4326)</button>
+          <button class='btn btn-secondary download geojson_download' id='${
+            f.name
+          }' value='geojson' data-original='${f.original_path}' data-wgs84='${
+      f.wgs84_path
+    }'>GeoJSON </button>
+          <button class='btn btn-secondary download kml_download' id='${
+            f.name
+          }' value='kml' data-original='${f.original_path}' data-wgs84='${
+      f.wgs84_path
   }'>KML (4326) </button>
+        </div>
       </div>
      </div>
     </div>

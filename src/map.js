@@ -22,6 +22,7 @@ module.exports.buildMap = function (div_id) {
     center: [-74.5, 40], // starting position [lng, lat]
     zoom: 9, // starting zoom
   });
+  
   // let map = L.map(div_id).setView([38.505, -98.09], 4);
   // layerControl = L.control.layers().addTo(map);
   
@@ -43,6 +44,11 @@ module.exports.addJSONToMap = function(arg, map) {
   geojson.features = short;
   let feature_type = geojson.features[0].geometry.type;
 
+  const popup = new mapboxgl.Popup({
+    closeButton: false,
+    closeOnClick: true,
+  });
+  
   switch(feature_type){
     case 'Polygon':
       addPolygon(geojson, arg, map)
@@ -94,8 +100,35 @@ module.exports.addJSONToMap = function(arg, map) {
         map.fitBounds(bounds, {padding: 100});
       break;
     }
+
+      map.on("click", function (e) {
+        // use queryRenderedFeatures to get features at the clicked point
+        var features = map.queryRenderedFeatures(e.point, {
+          layers: [`${arg.name}`],
+        });
+
+        // if there are features at the clicked point, do something
+        if (features.length) {
+          // get the first feature
+          var feature = features[0];
+
+          // do something with the feature (e.g. show a popup)
+          new mapboxgl.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML(createListFromObject(feature.properties))
+            .addTo(map);
+        }
+      });
   });
-  
+
+  map.on("click", "my-layer", function (e) {
+    const feature = e.features[0];
+
+  popup
+    .setLngLat(e.lngLat)
+    .setHTML(createListFromObject(feature.properties))
+    .addTo(map);
+  });
   // let featuregroup = L.featureGroup().addTo(map);
   // L.geoJson.vt(geojson, options).addTo(featuregroup);
   // let bounds = L.geoJSON(geojson.features[0]).getBounds();
@@ -131,6 +164,15 @@ function addPolygon(geojson, arg, map) {
       "line-width": 3,
     },
   });
+}
+
+function createListFromObject(obj) {
+  let htmlString = "<ul>";
+  for (const [key, value] of Object.entries(obj)) {
+    htmlString += `<li>${key}: ${value}</li>`;
+  }
+  htmlString += "</ul>";
+  return htmlString;
 }
 function addPoint(geojson, arg, map) {
   console.log(arg.name)
